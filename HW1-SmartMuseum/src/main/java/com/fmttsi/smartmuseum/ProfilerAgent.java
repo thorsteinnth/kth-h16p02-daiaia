@@ -32,6 +32,8 @@ public class ProfilerAgent extends Agent
 
         this.visitedItems = new ArrayList<>();
 
+        this.addBehaviour(new TourRequestPerformer());
+
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready.");
     }
 
@@ -54,6 +56,7 @@ public class ProfilerAgent extends Agent
         private int sentRequestCount;
         private int step = 0;
 
+        // Will be run repeatedly until done() returns true
         public void action()
         {
             switch (step)
@@ -62,7 +65,7 @@ public class ProfilerAgent extends Agent
 
                     // Send tour requests
 
-                    System.out.println("Entered step 0");
+                    System.out.println(myAgent.getAID().getName() + " entered step 0");
 
                     ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                     cfp.addReceiver(tourGuideAgent);
@@ -87,7 +90,7 @@ public class ProfilerAgent extends Agent
 
                     // Get tour request replies and find the best one
 
-                    System.out.println("Entered step 1");
+                    System.out.println(myAgent.getAID().getName() + " entered step 1");
 
                     ACLMessage reply = myAgent.receive(mt);
 
@@ -126,7 +129,7 @@ public class ProfilerAgent extends Agent
 
                     // Accept the best tour request
 
-                    System.out.println("Entered step 3");
+                    System.out.println(myAgent.getAID().getName() + " entered step 2");
 
                     ACLMessage acceptMessage = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
                     acceptMessage.addReceiver(bestTourGuide);
@@ -147,7 +150,7 @@ public class ProfilerAgent extends Agent
 
                 case 3:
 
-                    System.out.println("Entered step 3");
+                    System.out.println(myAgent.getAID().getName() + " entered step 3");
 
                     // Receive tour
 
