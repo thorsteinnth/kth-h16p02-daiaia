@@ -1,5 +1,6 @@
+import java.io.Serializable;
 
-public class Artifact
+public class Artifact implements Serializable
 {
     private int id;
     private ArtifactType type;
