@@ -5,6 +5,8 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.StringACLCodec;
+
 import java.util.ArrayList;
 
 public class TourGuideAgent extends Agent
@@ -94,6 +96,7 @@ public class TourGuideAgent extends Agent
 
         public void action()
         {
+            System.out.println(myAgent.getLocalName() + " is sending artifacts count: " + String.valueOf(artifactsCount));
             // Send the number of artifacts to the profiler
             this.reply.setPerformative(ACLMessage.PROPOSE);
             this.reply.setContent(String.valueOf(artifactsCount));
@@ -114,6 +117,8 @@ public class TourGuideAgent extends Agent
 
         public void action()
         {
+            System.out.println(myAgent.getLocalName() + " is sending Virtual-Tour");
+
             try
             {
                 this.reply.setPerformative(ACLMessage.INFORM);
