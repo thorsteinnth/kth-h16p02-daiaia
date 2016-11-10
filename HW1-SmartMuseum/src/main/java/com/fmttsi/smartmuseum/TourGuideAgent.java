@@ -30,12 +30,14 @@ public class TourGuideAgent extends Agent
     {
         public void action()
         {
-            MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.CFP),
+            MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.CFP),
                     MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL));
             ACLMessage msg = myAgent.receive(mt);
 
             if(msg != null)
             {
+                System.out.println(msg.getSender().getLocalName() + " wants to get information on artifacts for " + msg.getContent());
+
                 String interests = msg.getContent();
                 ACLMessage reply = msg.createReply();
 
@@ -66,8 +68,6 @@ public class TourGuideAgent extends Agent
                                             reply.setPerformative(ACLMessage.REFUSE);
                                             myAgent.send(reply);
                                         }
-
-
                                     }
                                 }
                         )
