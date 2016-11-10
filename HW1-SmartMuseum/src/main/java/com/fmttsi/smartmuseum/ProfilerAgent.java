@@ -168,7 +168,20 @@ public class ProfilerAgent extends Agent
                             // Tour received (list of artifacts)
                             System.out.println("Received tour from agent: " + reply.getSender().getName());
                             System.out.println("Number of interesting objects: " + bestTourNumberOfInterestingObjects);
-                            myAgent.doDelete(); // Don't terminate here ... have to talk to curator now
+
+                            ArrayList<Artifact> artifacts;
+
+                            try
+                            {
+                                artifacts = (ArrayList<Artifact>) reply.getContentObject();
+                            }
+                            catch (UnreadableException ex)
+                            {
+                                System.err.println(ex.toString());
+                                artifacts = new ArrayList<>();
+                            }
+
+                            myAgent.addBehaviour(new GetArtifactDetails(artifacts));
                         }
                         else
                         {
