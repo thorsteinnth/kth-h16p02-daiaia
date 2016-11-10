@@ -1,8 +1,10 @@
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 
 import java.util.ArrayList;
 
@@ -18,6 +20,7 @@ public class ProfilerAgent extends Agent
 
     // TODO Get agents from DF
     private AID tourGuideAgent = new AID("tourGuideAgent", AID.ISLOCALNAME);
+    private AID curatorAgent = new AID("curatorAgent", AID.ISLOCALNAME);
 
     //region Setup and takeDown
 
@@ -65,7 +68,7 @@ public class ProfilerAgent extends Agent
 
                     // Send tour requests
 
-                    System.out.println(myAgent.getAID().getName() + " entered step 0");
+                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 0");
 
                     ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                     cfp.addReceiver(tourGuideAgent);
@@ -90,7 +93,7 @@ public class ProfilerAgent extends Agent
 
                     // Get tour request replies and find the best one
 
-                    System.out.println(myAgent.getAID().getName() + " entered step 1");
+                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 1");
 
                     ACLMessage reply = myAgent.receive(mt);
 
@@ -129,7 +132,7 @@ public class ProfilerAgent extends Agent
 
                     // Accept the best tour request
 
-                    System.out.println(myAgent.getAID().getName() + " entered step 2");
+                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 2");
 
                     ACLMessage acceptMessage = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
                     acceptMessage.addReceiver(bestTourGuide);
@@ -150,16 +153,19 @@ public class ProfilerAgent extends Agent
 
                 case 3:
 
-                    System.out.println(myAgent.getAID().getName() + " entered step 3");
+                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 3");
 
                     // Receive tour
+                    // TODO Now we receive a full list of artifact objects
+                    // TODO We should not do that, have to contact the curatoragent for artifact details
 
                     reply = myAgent.receive(mt);
+
                     if (reply != null)
                     {
                         if (reply.getPerformative() == ACLMessage.INFORM)
                         {
-                            // Tour received
+                            // Tour received (list of artifacts)
                             System.out.println("Received tour from agent: " + reply.getSender().getName());
                             System.out.println("Number of interesting objects: " + bestTourNumberOfInterestingObjects);
                             myAgent.doDelete(); // Don't terminate here ... have to talk to curator now
@@ -183,6 +189,94 @@ public class ProfilerAgent extends Agent
         public boolean done()
         {
             return step == 4;
+        }
+    }
+
+    private class GetArtifactDetails extends Behaviour
+    {
+        private ArrayList<Artifact> artifacts;
+        private ArrayList<Artifact> receivedArtifactsWithDetails;
+        private int step;
+        private int sentRequestCount;
+        private int receivedResponseCount;
+        private MessageTemplate mt;
+
+        public GetArtifactDetails(ArrayList<Artifact> artifacts)
+        {
+            this.artifacts = artifacts;
+            this.receivedArtifactsWithDetails = new ArrayList<>();
+            this.step = 0;
+            this.sentRequestCount = 0;
+            this.receivedResponseCount = 0;
+        }
+
+        public void action()
+        {
+            switch (step)
+            {
+                case 0:
+
+                    System.out.println(myAgent.getAID().getName() + " Get artifact details entered step 0");
+
+                    for (Artifact artifact : this.artifacts)
+                    {
+                        ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
+                        cfp.addReceiver(curatorAgent);
+                        cfp.setContent(String.valueOf(artifact.getId()));
+                        cfp.setConversationId("get-artifact-details");
+
+                        myAgent.send(cfp);
+                        this.sentRequestCount++;
+                    }
+
+                    this.mt = MessageTemplate.MatchConversationId("get-artifact-details");
+
+                    step = 1;
+
+                    break;
+
+                case 1:
+
+                    // Receive all requested artifact details
+
+                    ACLMessage reply = myAgent.receive(this.mt);
+
+                    if (reply != null)
+                    {
+                        if (reply.getPerformative() == ACLMessage.INFORM)
+                        {
+                            try
+                            {
+                                // TODO Verify that this works
+                                Artifact receivedArtifact = (Artifact)reply.getContentObject();
+                                this.receivedArtifactsWithDetails.add(receivedArtifact);
+                            }
+                            catch (UnreadableException ex)
+                            {
+                                System.err.println("ProfilerAgent.GetArtifactDetails.action(): " + ex.toString());
+                            }
+
+                        }
+                        this.receivedResponseCount++;
+
+                        if (this.receivedResponseCount >= this.sentRequestCount)
+                        {
+                            this.step = 2;
+                            System.out.println("Received artifact details: " + this.receivedArtifactsWithDetails.toString());
+                        }
+                    }
+                    else
+                    {
+                        block();
+                    }
+
+                    break;
+            }
+        }
+
+        public boolean done()
+        {
+            return this.step == 2;
         }
     }
 
