@@ -5,7 +5,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import java.util.List;
+import java.util.ArrayList;
 
 public class TourGuideAgent extends Agent
 {
@@ -30,12 +30,14 @@ public class TourGuideAgent extends Agent
     {
         public void action()
         {
-            MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.CFP),
+            MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.CFP),
                     MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL));
             ACLMessage msg = myAgent.receive(mt);
 
             if(msg != null)
             {
+                System.out.println(msg.getSender().getLocalName() + " wants to get information on artifacts for " + msg.getContent());
+
                 String interests = msg.getContent();
                 ACLMessage reply = msg.createReply();
 
@@ -46,7 +48,7 @@ public class TourGuideAgent extends Agent
                                 new ArtifactCallback()
                                 {
                                     @Override
-                                    public void onGetArtifacts(List<Artifact> artifacts)
+                                    public void onGetArtifacts(ArrayList<Artifact> artifacts)
                                     {
                                         if(artifacts != null)
                                         {
@@ -66,8 +68,6 @@ public class TourGuideAgent extends Agent
                                             reply.setPerformative(ACLMessage.REFUSE);
                                             myAgent.send(reply);
                                         }
-
-
                                     }
                                 }
                         )
@@ -103,10 +103,10 @@ public class TourGuideAgent extends Agent
 
     private class SendVirtualTour extends OneShotBehaviour
     {
-        private List<Artifact> artifacts;
+        private ArrayList<Artifact> artifacts;
         private ACLMessage reply;
 
-        public SendVirtualTour(List<Artifact> artifacts, ACLMessage reply)
+        public SendVirtualTour(ArrayList<Artifact> artifacts, ACLMessage reply)
         {
             this.artifacts = artifacts;
             this.reply = reply;
@@ -114,8 +114,17 @@ public class TourGuideAgent extends Agent
 
         public void action()
         {
-            this.reply.setPerformative(ACLMessage.INFORM);
-            //this.reply.setContentObject(null); //TODO : Format and serialize artifacts
+            try
+            {
+                this.reply.setPerformative(ACLMessage.INFORM);
+                this.reply.setContentObject(artifacts); //TODO : Format artifacts for profiler
+            }
+            catch (Exception ex)
+            {
+                this.reply.setPerformative(ACLMessage.FAILURE);
+                ex.printStackTrace();
+            }
+
             this.myAgent.send(reply);
         }
     }
@@ -172,7 +181,7 @@ public class TourGuideAgent extends Agent
                             {
                                 if(this.delegate != null)
                                 {
-                                    List<Artifact> artifacts = (List<Artifact>) reply.getContentObject();
+                                    ArrayList<Artifact> artifacts = (ArrayList<Artifact>) reply.getContentObject();
                                     this.delegate.onGetArtifacts(artifacts);
                                 }
                             }
@@ -201,7 +210,7 @@ public class TourGuideAgent extends Agent
 
     private interface ArtifactCallback
     {
-        void onGetArtifacts(List<Artifact> artifacts);
+        void onGetArtifacts(ArrayList<Artifact> artifacts);
     }
 
 }
