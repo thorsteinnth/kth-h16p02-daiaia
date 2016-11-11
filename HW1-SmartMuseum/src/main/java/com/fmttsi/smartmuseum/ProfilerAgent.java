@@ -2,6 +2,7 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
@@ -35,7 +36,8 @@ public class ProfilerAgent extends Agent
 
         this.visitedItems = new ArrayList<>();
 
-        this.addBehaviour(new TourRequestPerformer());
+        // Let's just make him request a new tour every 10 seconds
+        this.addBehaviour(new TourRequestTicker(this, 10000));
 
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready.");
     }
@@ -49,6 +51,19 @@ public class ProfilerAgent extends Agent
     //endregion
 
     //region Behaviours
+
+    private class TourRequestTicker extends TickerBehaviour
+    {
+        public TourRequestTicker(Agent agent, long timeout)
+        {
+            super(agent, timeout);
+        }
+
+        public void onTick()
+        {
+            myAgent.addBehaviour(new TourRequestPerformer());
+        }
+    }
 
     private class TourRequestPerformer extends Behaviour
     {
