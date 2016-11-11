@@ -4,6 +4,10 @@ import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.StringACLCodec;
@@ -21,6 +25,8 @@ public class TourGuideAgent extends Agent
     {
         System.out.println("TourGuideAgent " + getAID().getName() + " is ready.");
 
+        RegisterTourGuideService();
+
         //add behavior to listen to virtual-tour requests from profiler agent
         addBehaviour(new VirtualTourServer());
     }
@@ -28,7 +34,39 @@ public class TourGuideAgent extends Agent
     protected void takeDown()
     {
         //Do necessary clean up here
+        DeregisterTourGuideService();
         System.out.println("TourGuideAgent " + getAID().getName() + " terminating.");
+    }
+
+    // Registers the tour-guide service in the yellow pages
+    private void RegisterTourGuideService()
+    {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("virtual-tour-guide");
+        sd.setName("Virtual-Tour guide");
+        dfd.addServices(sd);
+        try
+        {
+            DFService.register(this, dfd);
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
+    }
+    // Deregister the tour-guide service from the yellow pages
+    private void DeregisterTourGuideService()
+    {
+        try
+        {
+            DFService.deregister(this);
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
     }
 
     private class VirtualTourServer extends CyclicBehaviour

@@ -2,11 +2,16 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.TickerBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ProfilerAgent extends Agent
 {
@@ -21,8 +26,10 @@ public class ProfilerAgent extends Agent
     private String interests;
     private ArrayList<Artifact> visitedItems;
 
+    private DFAgentDescription dfTourGuideServiceTemplate;
+    private AID[] tourGuideAgents;
+
     // TODO Get agents from DF
-    private AID tourGuideAgent = new AID("tourGuideAgent", AID.ISLOCALNAME);
     private AID curatorAgent = new AID("curatorAgent", AID.ISLOCALNAME);
 
     //region Setup and takeDown
@@ -50,6 +57,15 @@ public class ProfilerAgent extends Agent
 
         this.addBehaviour(new TourRequestPerformer());
         // Let's make him request a new tour every 10 seconds
+        //Create the DF tour-guide templete
+        this.dfTourGuideServiceTemplate = new DFAgentDescription();
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("virtual-tour-guide");
+        sd.setName("Virtual-Tour guide");
+        this.dfTourGuideServiceTemplate.addServices(sd);
+
+        this.addBehaviour(new TourRequestPerformer());
+        // Let's just make him request a new tour every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready: " + this.toString());
@@ -84,7 +100,6 @@ public class ProfilerAgent extends Agent
         private int bestTourNumberOfInterestingObjects;
         private AID bestTourGuide;
         private int repliesCount;
-        private int sentRequestCount;
         private int step = 0;
 
         // Will be run repeatedly until done() returns true
@@ -99,14 +114,35 @@ public class ProfilerAgent extends Agent
                     System.out.println(myAgent.getAID().getName()
                             + " Tour request entered step 0");
 
+                    //Update the list of all tour-guide agents available
+                    try
+                    {
+                        DFAgentDescription[] result = DFService.search(myAgent, dfTourGuideServiceTemplate);
+                        System.out.println("Found the following tour-guide agents:");
+                        tourGuideAgents = new AID[result.length];
+                        for (int i = 0; i < result.length; ++i)
+                        {
+                            tourGuideAgents[i] = result[i].getName();
+                            System.out.println(tourGuideAgents[i].getName());
+                        }
+                    }
+                    catch (FIPAException fe)
+                    {
+                        fe.printStackTrace();
+                    }
+
                     ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-                    cfp.addReceiver(tourGuideAgent);
+
+                    for (int i = 0; i < tourGuideAgents.length; ++i)
+                    {
+                        cfp.addReceiver(tourGuideAgents[i]);
+                    }
+
                     cfp.setContent(interests);
                     cfp.setConversationId("tour-offer-request");
                     cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique value
 
                     myAgent.send(cfp);
-                    sentRequestCount = 1;
 
                     // Prepare the template to get proposals
                     mt = MessageTemplate.and(
@@ -145,7 +181,7 @@ public class ProfilerAgent extends Agent
                             }
                         }
 
-                        if (repliesCount >= sentRequestCount)
+                        if (repliesCount >= tourGuideAgents.length)
                         {
                             // We received all replies
                             step = 2;
@@ -333,16 +369,16 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
-
     @Override
     public String toString()
     {
         return "ProfilerAgent{" +
-                "age=" + age +
+                "age='" + age + '\'' +
                 ", occupation='" + occupation + '\'' +
                 ", interests='" + interests + '\'' +
                 ", visitedItems=" + visitedItems +
-                ", tourGuideAgent=" + tourGuideAgent +
+                ", dfTourGuideServiceTemplate=" + dfTourGuideServiceTemplate +
+                ", tourGuideAgents=" + Arrays.toString(tourGuideAgents) +
                 ", curatorAgent=" + curatorAgent +
                 '}';
     }
