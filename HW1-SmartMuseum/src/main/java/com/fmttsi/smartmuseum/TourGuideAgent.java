@@ -18,14 +18,21 @@ import java.util.Map;
 
 public class TourGuideAgent extends Agent
 {
-    // TODO: Find all Curators from DF
-    private AID curatorAgent = new AID("curatorAgent", AID.ISLOCALNAME);
+    private DFAgentDescription dfCuratorServiceTemplate;
+    private AID[] curatorAgents;
 
     protected void setup()
     {
         System.out.println("TourGuideAgent " + getAID().getName() + " is ready.");
 
         RegisterTourGuideService();
+
+        //Create the DF curator templete
+        this.dfCuratorServiceTemplate = new DFAgentDescription();
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("get-artifacts");
+        sd.setName("get-artifacts-by-interest-and-id");
+        this.dfCuratorServiceTemplate.addServices(sd);
 
         //add behavior to listen to virtual-tour requests from profiler agent
         addBehaviour(new VirtualTourServer());
@@ -159,6 +166,7 @@ public class TourGuideAgent extends Agent
 
         public void action()
         {
+            // TODO: Also send curator agent for profiler to contact for details
             System.out.println(myAgent.getLocalName() + " is sending Virtual-Tour");
 
             try
@@ -189,7 +197,10 @@ public class TourGuideAgent extends Agent
         private String interests;
         private ArtifactCallback delegate;
         private MessageTemplate mt;
+        private int repliesCount;
         private int step;
+
+        // TODO : Create list of lists of artifacts from all curators
 
         public GetArtifacts(String interests, ArtifactCallback delegate)
         {
@@ -203,9 +214,31 @@ public class TourGuideAgent extends Agent
             switch (this.step)
             {
                 case 0:
+                    // Start by update the list of all curator agents available
+                    try
+                    {
+                        DFAgentDescription[] result = DFService.search(myAgent, dfCuratorServiceTemplate);
+                        System.out.println("Found the following curator agents:");
+                        curatorAgents = new AID[result.length];
+                        for (int i = 0; i < result.length; ++i)
+                        {
+                            curatorAgents[i] = result[i].getName();
+                            System.out.println(curatorAgents[i].getName());
+                        }
+                    }
+                    catch (FIPAException fe)
+                    {
+                        fe.printStackTrace();
+                    }
+
                     // Send request to curator agent to get list of artifacts for given interests
                     ACLMessage getListOfArtifactsMsg = new ACLMessage(ACLMessage.REQUEST);
-                    getListOfArtifactsMsg.addReceiver(curatorAgent);
+
+                    for (int i = 0; i < curatorAgents.length; ++i)
+                    {
+                        getListOfArtifactsMsg.addReceiver(curatorAgents[i]);
+                    }
+
                     getListOfArtifactsMsg.setLanguage("English");
                     getListOfArtifactsMsg.setContent(interests);
                     getListOfArtifactsMsg.setConversationId("get-artifacts-for-interest");
@@ -225,6 +258,11 @@ public class TourGuideAgent extends Agent
 
                     if(reply != null)
                     {
+                        // Reply received
+                        repliesCount++;
+
+                        //TODO the delegate should return list of list of artifacts
+
                         if(reply.getPerformative() == ACLMessage.REFUSE)
                         {
                             //No artifacts available
@@ -247,7 +285,11 @@ public class TourGuideAgent extends Agent
                             }
                         }
 
-                        step = 2;
+                        if (repliesCount >= curatorAgents.length)
+                        {
+                            // We received all replies
+                            step = 2;
+                        }
                     }
                     else
                     {

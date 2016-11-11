@@ -29,7 +29,7 @@ public class ProfilerAgent extends Agent
     private DFAgentDescription dfTourGuideServiceTemplate;
     private AID[] tourGuideAgents;
 
-    // TODO Get agents from DF
+    // TODO Get curator agent from tour guide reply
     private AID curatorAgent = new AID("curatorAgent", AID.ISLOCALNAME);
 
     //region Setup and takeDown
@@ -57,6 +57,7 @@ public class ProfilerAgent extends Agent
 
         this.addBehaviour(new TourRequestPerformer());
         // Let's make him request a new tour every 10 seconds
+
         //Create the DF tour-guide templete
         this.dfTourGuideServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();

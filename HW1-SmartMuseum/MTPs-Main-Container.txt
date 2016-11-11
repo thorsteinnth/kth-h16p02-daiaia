@@ -1,1 +1,1 @@
-http://n129-p37.kthopen.kth.se:7778/acc
+http://fannars-mbp.lan:7778/acc
