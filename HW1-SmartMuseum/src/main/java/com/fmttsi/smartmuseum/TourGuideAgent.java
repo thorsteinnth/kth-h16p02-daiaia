@@ -41,7 +41,8 @@ public class TourGuideAgent extends Agent
 
             if(msg != null)
             {
-                System.out.println(msg.getSender().getLocalName() + " wants to get information on artifacts for " + msg.getContent());
+                System.out.println(msg.getSender().getLocalName()
+                        + " wants to get information on artifacts for " + msg.getContent());
 
                 String interests = msg.getContent();
                 ACLMessage reply = msg.createReply();
@@ -98,7 +99,8 @@ public class TourGuideAgent extends Agent
 
         public void action()
         {
-            System.out.println(myAgent.getLocalName() + " is sending artifacts count: " + String.valueOf(artifactsCount));
+            System.out.println(myAgent.getLocalName() + " is sending artifacts count: "
+                    + String.valueOf(artifactsCount));
             // Send the number of artifacts to the profiler
             this.reply.setPerformative(ACLMessage.PROPOSE);
             this.reply.setContent(String.valueOf(artifactsCount));
@@ -172,8 +174,10 @@ public class TourGuideAgent extends Agent
                     getListOfArtifactsMsg.setReplyWith("get-artifacts" + System.currentTimeMillis());
                     myAgent.send(getListOfArtifactsMsg);
 
-                    this.mt = MessageTemplate.and(MessageTemplate.MatchConversationId("get-artifacts-for-interest"),
-                            MessageTemplate.MatchInReplyTo(getListOfArtifactsMsg.getReplyWith()));
+                    this.mt = MessageTemplate.and(
+                            MessageTemplate.MatchConversationId("get-artifacts-for-interest"),
+                            MessageTemplate.MatchInReplyTo(getListOfArtifactsMsg.getReplyWith())
+                    );
 
                     step = 1;
                     break;
@@ -195,7 +199,7 @@ public class TourGuideAgent extends Agent
                             {
                                 if(this.delegate != null)
                                 {
-                                    ArrayList<Artifact> artifacts = (ArrayList<Artifact>) reply.getContentObject();
+                                    ArrayList<Artifact> artifacts = (ArrayList<Artifact>)reply.getContentObject();
                                     this.delegate.onGetArtifacts(artifacts);
                                 }
                             }
