@@ -13,9 +13,12 @@ public class ProfilerAgent extends Agent
     // Requests virtual tour from tour guide agent
     // Get detailed info on objects in tour from curator agent
 
-    private int age;
+    private String age;
     private String occupation;
-    private ArrayList<String> interests;
+    /**
+     * A space separated string of interests, e.g. "paintings sculptures buildings"
+     */
+    private String interests;
     private ArrayList<Artifact> visitedItems;
 
     // TODO Get agents from DF
@@ -26,12 +29,22 @@ public class ProfilerAgent extends Agent
 
     protected void setup()
     {
-        // TODO Get info from command line arguments
-        this.age = 27;
-        this.occupation = "Software engineer";
-        this.interests = new ArrayList<>();
-        this.interests.add("paintings");
-        this.interests.add("sculptures");
+        Object[] args = getArguments();
+        if (args != null && args.length == 3)
+        {
+            this.age = (String)args[0];
+            this.occupation = ((String)args[1]).replace("-", " ");
+            this.interests = ((String)args[2]).replace("-", " ");
+        }
+        else
+        {
+            System.out.println("ProfilerAgent: Need command line arguments on the form (age,occupation,interests) " +
+                    "where different words in the occupation and different interests are separated by \"-\". " +
+                    "Example: (27,software-engineer,paintings-sculptures-buildings)");
+
+            // Terminate agent
+            doDelete();
+        }
 
         this.visitedItems = new ArrayList<>();
 
@@ -39,7 +52,7 @@ public class ProfilerAgent extends Agent
         // Let's make him request a new tour every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
-        System.out.println("ProfilerAgent " + getAID().getName() + " is ready.");
+        System.out.println("ProfilerAgent " + getAID().getName() + " is ready: " + this.toString());
     }
 
     protected void takeDown()
@@ -88,7 +101,7 @@ public class ProfilerAgent extends Agent
 
                     ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                     cfp.addReceiver(tourGuideAgent);
-                    cfp.setContent(getInterestString());
+                    cfp.setContent(interests);
                     cfp.setConversationId("tour-offer-request");
                     cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique value
 
@@ -153,7 +166,7 @@ public class ProfilerAgent extends Agent
 
                     ACLMessage acceptMessage = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
                     acceptMessage.addReceiver(bestTourGuide);
-                    acceptMessage.setContent(getInterestString());
+                    acceptMessage.setContent(interests);
                     acceptMessage.setConversationId("tour-offer-request-acceptance");
                     acceptMessage.setReplyWith("acceptMessage" + System.currentTimeMillis());
 
@@ -320,15 +333,6 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
-    private String getInterestString()
-    {
-        StringBuilder sb = new StringBuilder();
-
-        for (String interest : interests)
-            sb.append(interest + " ");
-
-        return sb.toString().trim();
-    }
 
     @Override
     public String toString()
@@ -336,9 +340,10 @@ public class ProfilerAgent extends Agent
         return "ProfilerAgent{" +
                 "age=" + age +
                 ", occupation='" + occupation + '\'' +
-                ", interests=" + interests +
+                ", interests='" + interests + '\'' +
                 ", visitedItems=" + visitedItems +
                 ", tourGuideAgent=" + tourGuideAgent +
+                ", curatorAgent=" + curatorAgent +
                 '}';
     }
 }
