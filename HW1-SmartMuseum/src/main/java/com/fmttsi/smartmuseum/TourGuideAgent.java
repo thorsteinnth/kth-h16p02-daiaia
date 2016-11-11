@@ -1,3 +1,4 @@
+import com.sun.tools.javac.util.Pair;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
@@ -8,6 +9,8 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.StringACLCodec;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TourGuideAgent extends Agent
 {
@@ -44,7 +47,6 @@ public class TourGuideAgent extends Agent
                 String interests = msg.getContent();
                 ACLMessage reply = msg.createReply();
 
-                //send content number of artifacts
                 addBehaviour(
                         new GetArtifacts(
                                 interests,
@@ -124,7 +126,15 @@ public class TourGuideAgent extends Agent
             try
             {
                 this.reply.setPerformative(ACLMessage.INFORM);
-                this.reply.setContentObject(artifacts); //TODO : Format artifacts for profiler
+
+                ArrayList<ArtifactHeader> artifactHeaders = new ArrayList<>();
+
+                for(Artifact artifact : artifacts)
+                {
+                    artifactHeaders.add(new ArtifactHeader(artifact.getId(), artifact.getName()));
+                }
+
+                this.reply.setContentObject(artifactHeaders);
             }
             catch (Exception ex)
             {
@@ -136,7 +146,6 @@ public class TourGuideAgent extends Agent
         }
     }
 
-    // TODO : For now we assume that the tour guide agent only knows of one curator agent
     private class GetArtifacts extends Behaviour
     {
         private String interests;

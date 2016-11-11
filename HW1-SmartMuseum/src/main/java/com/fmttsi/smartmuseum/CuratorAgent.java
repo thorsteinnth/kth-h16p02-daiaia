@@ -185,12 +185,12 @@ public class CuratorAgent extends Agent
     {
         ArrayList<Artifact> artifacts = new ArrayList<>();
 
-        artifacts.add(new Artifact(1, Artifact.ArtifactType.Building, "Cool building"));
-        artifacts.add(new Artifact(2, Artifact.ArtifactType.Item, "Cool item"));
-        artifacts.add(new Artifact(3, Artifact.ArtifactType.Other, "Cool something"));
-        artifacts.add(new Artifact(4, Artifact.ArtifactType.Painting, "Cool painting"));
-        artifacts.add(new Artifact(5, Artifact.ArtifactType.Sculpture, "Cool sculpture"));
-        artifacts.add(new Artifact(6, Artifact.ArtifactType.Sculpture, "Cool sculpture2"));
+        artifacts.add(new Artifact(1, Artifact.ArtifactType.Building, "Cool building", "Description of this very cool building"));
+        artifacts.add(new Artifact(2, Artifact.ArtifactType.Item, "Cool item", "Description of this cool item"));
+        artifacts.add(new Artifact(3, Artifact.ArtifactType.Other, "Cool something", "Description of something"));
+        artifacts.add(new Artifact(4, Artifact.ArtifactType.Painting, "Cool painting", "Description of this cool painting"));
+        artifacts.add(new Artifact(5, Artifact.ArtifactType.Sculpture, "Cool sculpture", "Description of this cool sculpture"));
+        artifacts.add(new Artifact(6, Artifact.ArtifactType.Sculpture, "Cool sculpture 2", "Description of this cool sculpture"));
 
         return artifacts;
     }

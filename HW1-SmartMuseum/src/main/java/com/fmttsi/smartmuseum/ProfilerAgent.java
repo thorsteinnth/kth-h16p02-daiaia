@@ -172,9 +172,7 @@ public class ProfilerAgent extends Agent
 
                     System.out.println(myAgent.getAID().getName() + " Tour request entered step 3");
 
-                    // Receive tour
-                    // TODO Now we receive a full list of artifact objects
-                    // TODO We should not do that, have to contact the curatoragent for artifact details
+                    // Receive tour (artifact headers)
 
                     reply = myAgent.receive(mt);
 
@@ -182,21 +180,31 @@ public class ProfilerAgent extends Agent
                     {
                         if (reply.getPerformative() == ACLMessage.INFORM)
                         {
-                            // Tour received (list of artifacts)
+                            // Tour received (list of artifact headers)
                             System.out.println("Received tour from agent: " + reply.getSender().getName());
                             System.out.println("Number of interesting objects: " + bestTourNumberOfInterestingObjects);
 
-                            ArrayList<Artifact> artifacts;
+                            ArrayList<ArtifactHeader> artifacts;
 
                             try
                             {
-                                artifacts = (ArrayList<Artifact>) reply.getContentObject();
+                                artifacts = (ArrayList<ArtifactHeader>) reply.getContentObject();
                             }
                             catch (UnreadableException ex)
                             {
                                 System.err.println(ex.toString());
                                 artifacts = new ArrayList<>();
                             }
+
+                            // Print out virtual tour
+                            System.out.println();
+                            System.out.println("The virtual-tour:");
+
+                            for (ArtifactHeader artifact : artifacts)
+                            {
+                                System.out.println(artifact.getId() + " - " + artifact.getName());
+                            }
+                            System.out.println();
 
                             myAgent.addBehaviour(new GetArtifactDetails(artifacts));
                         }
@@ -224,14 +232,14 @@ public class ProfilerAgent extends Agent
 
     private class GetArtifactDetails extends Behaviour
     {
-        private ArrayList<Artifact> artifacts;
+        private ArrayList<ArtifactHeader> artifacts;
         private ArrayList<Artifact> receivedArtifactsWithDetails;
         private int step;
         private int sentRequestCount;
         private int receivedResponseCount;
         private MessageTemplate mt;
 
-        public GetArtifactDetails(ArrayList<Artifact> artifacts)
+        public GetArtifactDetails(ArrayList<ArtifactHeader> artifacts)
         {
             this.artifacts = artifacts;
             this.receivedArtifactsWithDetails = new ArrayList<>();
@@ -248,7 +256,7 @@ public class ProfilerAgent extends Agent
 
                     System.out.println(myAgent.getAID().getName() + " Get artifact details entered step 0");
 
-                    for (Artifact artifact : this.artifacts)
+                    for (ArtifactHeader artifact : this.artifacts)
                     {
                         ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
                         cfp.addReceiver(curatorAgent);
