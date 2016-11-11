@@ -4,6 +4,7 @@ public class Artifact implements Serializable
 {
     private int id;
     private ArtifactType type;
+    private String name;
     private String description;
 
     public enum ArtifactType
@@ -15,10 +16,11 @@ public class Artifact implements Serializable
         Other
     }
 
-    public Artifact(int id, ArtifactType type, String description)
+    public Artifact(int id, ArtifactType type, String name, String description)
     {
         this.id = id;
         this.type = type;
+        this.name = name;
         this.description = description;
     }
 
@@ -32,6 +34,11 @@ public class Artifact implements Serializable
         return type;
     }
 
+    public String getName()
+    {
+        return name;
+    }
+
     public String getDescription()
     {
         return description;
@@ -43,6 +50,7 @@ public class Artifact implements Serializable
         return "Artifact{" +
                 "id=" + id +
                 ", type=" + type +
+                ", name=" + name +
                 ", description='" + description + '\'' +
                 '}';
     }
