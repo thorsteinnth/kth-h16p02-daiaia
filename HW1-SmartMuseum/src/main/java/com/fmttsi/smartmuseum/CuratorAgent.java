@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// CuratorAgent monitors the gallery/museum
 public class CuratorAgent extends Agent
 {
     private ArrayList<Artifact> artifacts;
@@ -46,8 +47,8 @@ public class CuratorAgent extends Agent
 
                 ACLMessage reply = msg.createReply();
 
-                String interest = msg.getContent();
-                ArrayList<Artifact> artifacts = getArtifactsForInterest(interest);
+                String interests = msg.getContent();
+                ArrayList<Artifact> artifacts = getArtifactsForInterests(interests);
 
                 try
                 {
@@ -127,12 +128,57 @@ public class CuratorAgent extends Agent
             return foundArtifacts.get(0);
     }
 
-    private ArrayList<Artifact> getArtifactsForInterest(String interest)
+    private ArrayList<Artifact> getArtifactsForInterests(String interests)
     {
-        // TODO Different tour guide agents should get different artifacts
-        // TODO Should only return artifacts that are valid for this interest
+        // Interests string is separated with spaces
+        // e.g. "paintings sculptures buildings"
+        String[] splitInterests = interests.split("\\s+");
 
-        return this.artifacts;
+        ArrayList<Artifact.ArtifactType> artifactTypes = mapInterestToArtifactTypes(splitInterests);
+
+        ArrayList<Artifact> foundArtifacts =
+                this.artifacts
+                        .stream()
+                        .filter(a -> artifactTypes.contains(a.getType()))
+                        .collect(Collectors.toCollection(ArrayList::new));
+
+        return foundArtifacts;
+    }
+
+    private ArrayList<Artifact.ArtifactType> mapInterestToArtifactTypes(String[] interests)
+    {
+        ArrayList<Artifact.ArtifactType> artifactTypes = new ArrayList<>();
+
+        for (String interest : interests)
+        {
+            switch (interest)
+            {
+                case "paintings":
+                    if (!artifactTypes.contains(Artifact.ArtifactType.Painting))
+                        artifactTypes.add(Artifact.ArtifactType.Painting);
+                    break;
+                case "sculptures":
+                    if (!artifactTypes.contains(Artifact.ArtifactType.Sculpture))
+                        artifactTypes.add(Artifact.ArtifactType.Sculpture);
+                    break;
+                case "buildings":
+                    if (!artifactTypes.contains(Artifact.ArtifactType.Building))
+                        artifactTypes.add(Artifact.ArtifactType.Building);
+                    break;
+                case "items":
+                    if (!artifactTypes.contains(Artifact.ArtifactType.Item))
+                        artifactTypes.add(Artifact.ArtifactType.Item);
+                    break;
+                case "other":
+                    if (!artifactTypes.contains(Artifact.ArtifactType.Other))
+                        artifactTypes.add(Artifact.ArtifactType.Other);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return artifactTypes;
     }
 
     private ArrayList<Artifact> generateArtifacts()
@@ -144,6 +190,7 @@ public class CuratorAgent extends Agent
         artifacts.add(new Artifact(3, Artifact.ArtifactType.Other, "Cool something", "Description of something"));
         artifacts.add(new Artifact(4, Artifact.ArtifactType.Painting, "Cool painting", "Description of this cool painting"));
         artifacts.add(new Artifact(5, Artifact.ArtifactType.Sculpture, "Cool sculpture", "Description of this cool sculpture"));
+        artifacts.add(new Artifact(6, Artifact.ArtifactType.Sculpture, "Cool sculpture 2", "Description of this cool sculpture"));
 
         return artifacts;
     }

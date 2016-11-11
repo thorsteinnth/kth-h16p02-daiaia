@@ -1,7 +1,6 @@
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -37,11 +36,13 @@ public class ProfilerAgent extends Agent
         this.age = 27;
         this.occupation = "Software engineer";
         this.interests = new ArrayList<>();
-        this.interests.add("painting");
-        this.interests.add("sculpture");
+        this.interests.add("paintings");
+        this.interests.add("sculptures");
 
         this.visitedItems = new ArrayList<>();
 
+        this.addBehaviour(new TourRequestPerformer());
+        // Let's make him request a new tour every 10 seconds
         //Create the DF tour-guide templete
         this.dfTourGuideServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
@@ -49,6 +50,7 @@ public class ProfilerAgent extends Agent
         sd.setName("Virtual-Tour guide");
         this.dfTourGuideServiceTemplate.addServices(sd);
 
+        this.addBehaviour(new TourRequestPerformer());
         // Let's just make him request a new tour every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
@@ -95,7 +97,8 @@ public class ProfilerAgent extends Agent
 
                     // Send tour requests
 
-                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 0");
+                    System.out.println(myAgent.getAID().getName()
+                            + " Tour request entered step 0");
 
                     //Update the list of all tour-guide agents available
                     try
@@ -141,7 +144,8 @@ public class ProfilerAgent extends Agent
 
                     // Get tour request replies and find the best one
 
-                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 1");
+                    System.out.println(myAgent.getAID().getName()
+                            + " Tour request entered step 1");
 
                     ACLMessage reply = myAgent.receive(mt);
 
