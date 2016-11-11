@@ -1,7 +1,6 @@
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -31,12 +30,13 @@ public class ProfilerAgent extends Agent
         this.age = 27;
         this.occupation = "Software engineer";
         this.interests = new ArrayList<>();
-        this.interests.add("painting");
-        this.interests.add("sculpture");
+        this.interests.add("paintings");
+        this.interests.add("sculptures");
 
         this.visitedItems = new ArrayList<>();
 
-        // Let's just make him request a new tour every 10 seconds
+        this.addBehaviour(new TourRequestPerformer());
+        // Let's make him request a new tour every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready.");
@@ -83,7 +83,8 @@ public class ProfilerAgent extends Agent
 
                     // Send tour requests
 
-                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 0");
+                    System.out.println(myAgent.getAID().getName()
+                            + " Tour request entered step 0");
 
                     ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                     cfp.addReceiver(tourGuideAgent);
@@ -108,7 +109,8 @@ public class ProfilerAgent extends Agent
 
                     // Get tour request replies and find the best one
 
-                    System.out.println(myAgent.getAID().getName() + " Tour request entered step 1");
+                    System.out.println(myAgent.getAID().getName()
+                            + " Tour request entered step 1");
 
                     ACLMessage reply = myAgent.receive(mt);
 
