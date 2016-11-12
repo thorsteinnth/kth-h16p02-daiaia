@@ -1,5 +1,9 @@
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
@@ -17,6 +21,8 @@ public class CuratorAgent extends Agent
     {
         this.artifacts = generateArtifacts();
 
+        RegisterCuratorService();
+
         this.addBehaviour(new ArtifactsForInterestServer());
         this.addBehaviour(new ArtifactDetailsServer());
 
@@ -25,7 +31,39 @@ public class CuratorAgent extends Agent
 
     protected void takeDown()
     {
+        DeregisterCuratorService();
         System.out.println("CuratorAgent " + getAID().getName() + " terminating.");
+    }
+
+    // Registers the curator service in the yellow pages
+    private void RegisterCuratorService()
+    {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("get-artifacts");
+        sd.setName("get-artifacts-by-interest-and-id");
+        dfd.addServices(sd);
+        try
+        {
+            DFService.register(this, dfd);
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
+    }
+    // Deregister the curator service from the yellow pages
+    private void DeregisterCuratorService()
+    {
+        try
+        {
+            DFService.deregister(this);
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
     }
 
     //region Behaviours
