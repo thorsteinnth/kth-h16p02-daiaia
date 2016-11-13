@@ -120,7 +120,6 @@ public class TourGuideAgent extends Agent
                         + " wants to get information on artifacts for " + msg.getContent());
 
                 String interests = msg.getContent();
-
                 String mutualInterests = getMutualInterests(interests);
 
                 ACLMessage reply = msg.createReply();
@@ -248,26 +247,12 @@ public class TourGuideAgent extends Agent
             switch (this.step)
             {
                 case 0:
-                    // Start by finding the curator agent (there should only be one)
-                    try
-                    {
-                        DFAgentDescription[] result = DFService.search(myAgent, dfCuratorServiceTemplate);
 
-                        if(result.length > 0)
-                        {
-                            System.out.println("Found curator agent:");
-                            curatorAgent = result[0].getName();
-                            System.out.println(curatorAgent.getName());
-                        }
-                        else
-                        {
-                            System.out.println("Could not find curator agent");
-                            step = 2;
-                        }
-                    }
-                    catch (FIPAException fe)
+                    // Start by finding the curator agent (there should only be one)
+                    if(!getCurator())
                     {
-                        fe.printStackTrace();
+                        step = 2;
+                        break;
                     }
 
                     // Send request to curator agent to get list of artifacts for given interests
@@ -330,6 +315,33 @@ public class TourGuideAgent extends Agent
         {
             return step == 2;
         }
+    }
+
+    private boolean getCurator()
+    {
+        try
+        {
+            DFAgentDescription[] result = DFService.search(this, this.dfCuratorServiceTemplate);
+
+            if(result.length > 0)
+            {
+                System.out.println(getLocalName() + ": Found curator agent: ");
+                this.curatorAgent = result[0].getName();
+                System.out.println(curatorAgent.getName());
+
+                return true;
+            }
+            else
+            {
+                System.out.println("Could not find curator agent");
+            }
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
+
+        return false;
     }
 
 

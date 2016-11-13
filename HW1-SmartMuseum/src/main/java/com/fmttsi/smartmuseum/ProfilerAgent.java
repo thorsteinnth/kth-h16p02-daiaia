@@ -30,8 +30,8 @@ public class ProfilerAgent extends Agent
     private ArrayList<AID> tourGuides;
     private DataStore tourReplyDataStore;
 
-    // TODO Get curator from DF
-    private AID curatorAgent = new AID("curatorAgent", AID.ISLOCALNAME);
+    private DFAgentDescription dfCuratorServiceTemplate;
+    private AID curatorAgent;
 
     //region Setup and takeDown
 
@@ -64,6 +64,13 @@ public class ProfilerAgent extends Agent
         sd.setType("virtual-tour-guide");
         sd.setName("Virtual-Tour guide");
         this.dfTourGuideServiceTemplate.addServices(sd);
+
+        //Create the DF template to find the curator agent
+        this.dfCuratorServiceTemplate = new DFAgentDescription();
+        ServiceDescription curatorSD = new ServiceDescription();
+        curatorSD.setType("get-artifact-details");
+        curatorSD.setName("name-get-artifact-details");
+        this.dfCuratorServiceTemplate.addServices(curatorSD);
 
         // Let's request tours every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
@@ -317,6 +324,13 @@ public class ProfilerAgent extends Agent
 
                     System.out.println(myAgent.getAID().getName() + " Get artifact details entered step 0");
 
+                    // Start by finding the curator, if we cannot find we break from the loop
+                    if(!getCurator())
+                    {
+                        step = 2;
+                        break;
+                    }
+
                     for (ArtifactHeader artifact : this.artifacts)
                     {
                         ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
@@ -393,7 +407,7 @@ public class ProfilerAgent extends Agent
                 foundTourGuides.add(result[i].getName());
             }
 
-            System.out.println(getName() + ": Found the following tour-guide agents:");
+            System.out.println(getLocalName() + ": Found the following tour-guide agents:");
             for (AID tourGuide : foundTourGuides)
                 System.out.println(tourGuide);
 
@@ -403,6 +417,33 @@ public class ProfilerAgent extends Agent
         {
             fe.printStackTrace();
         }
+    }
+
+    private boolean getCurator()
+    {
+        try
+        {
+            DFAgentDescription[] result = DFService.search(this, this.dfCuratorServiceTemplate);
+
+            if(result.length > 0)
+            {
+                System.out.println(getLocalName() + ": Found curator agent:");
+                this.curatorAgent = result[0].getName();
+                System.out.println(curatorAgent.getName());
+
+                return true;
+            }
+            else
+            {
+                System.out.println("Could not find curator agent");
+            }
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
+
+        return false;
     }
 
     private ACLMessage selectBestTourOffer()
