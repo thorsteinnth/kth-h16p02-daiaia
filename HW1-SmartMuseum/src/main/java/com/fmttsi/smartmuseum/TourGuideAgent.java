@@ -10,20 +10,24 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
-import java.util.ArrayList;
+import java.util.*;
 
 public class TourGuideAgent extends Agent
 {
+    /**
+     * A space separated string of the tour guide specialities, e.g. "paintings sculptures buildings"
+     */
+    private String specialities;
     private DFAgentDescription dfCuratorServiceTemplate;
     private AID curatorAgent;
 
     protected void setup()
     {
-        System.out.println("TourGuideAgent " + getAID().getName() + " is ready.");
+        this.specialities = getTourGuideSpecialities();
 
-        RegisterTourGuideService();
+        registerTourGuideService();
 
-        //Create the DF curator template
+        //Create the DF template to find the curator agent
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType("get-artifacts");
@@ -32,17 +36,46 @@ public class TourGuideAgent extends Agent
 
         //add behavior to listen to virtual-tour requests from profiler agent
         addBehaviour(new VirtualTourServer());
+
+        System.out.println("TourGuideAgent " + getAID().getName() + " is ready with specialities: " + specialities);
     }
 
     protected void takeDown()
     {
         //Do necessary clean up here
-        DeregisterTourGuideService();
+        deregisterTourGuideService();
         System.out.println("TourGuideAgent " + getAID().getName() + " terminating.");
     }
 
+    // Returns a space separated string of the tour guide specialities, e.g. "paintings sculptures buildings"
+    private String getTourGuideSpecialities()
+    {
+        String specialities = "";
+
+        Random random = new Random();
+
+        switch (random.nextInt(4))
+        {
+            case 0:
+                specialities = "paintings sculptures";
+                break;
+            case 1:
+                specialities = "buildings";
+                break;
+            case 2:
+                specialities = "paintings items";
+                break;
+            case 3:
+                specialities = "sculptures buildings items";
+                break;
+        }
+
+        return specialities;
+    }
+
+
     // Registers the virtual tour-guide service in the yellow pages
-    private void RegisterTourGuideService()
+    private void registerTourGuideService()
     {
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
@@ -60,7 +93,7 @@ public class TourGuideAgent extends Agent
         }
     }
     // Deregister the virtual tour-guide service from the yellow pages
-    private void DeregisterTourGuideService()
+    private void deregisterTourGuideService()
     {
         try
         {
@@ -86,11 +119,14 @@ public class TourGuideAgent extends Agent
                         + " wants to get information on artifacts for " + msg.getContent());
 
                 String interests = msg.getContent();
+
+                String mutualInterests = getMutualInterests(interests);
+
                 ACLMessage reply = msg.createReply();
 
                 addBehaviour(
                         new GetArtifacts(
-                                interests,
+                                mutualInterests,
                                 new ArtifactCallback()
                                 {
                                     @Override
@@ -101,7 +137,6 @@ public class TourGuideAgent extends Agent
                                             if(msg.getPerformative() == ACLMessage.CFP)
                                             {
                                                 int artifactsCount = artifacts.size();
-
                                                 addBehaviour(new SendArtifactsCount(artifactsCount, reply));
                                             }
                                             else if(msg.getPerformative() == ACLMessage.ACCEPT_PROPOSAL)
@@ -124,6 +159,30 @@ public class TourGuideAgent extends Agent
             {
                 block();
             }
+        }
+
+        // Returns a space separated string of interests that the guide specialises in and the profiler is interested in
+        private String getMutualInterests(String profilerInterests)
+        {
+            System.out.println("Finding mutual interests for profiler: " + profilerInterests +
+                    " and guide: " + specialities);
+
+            String result = "";
+
+            Set<String> profilerInt = new HashSet<>(Arrays.asList(profilerInterests.split(" ")));
+            Set<String> tourGuideSpes = new HashSet<>(Arrays.asList(specialities.split(" ")));
+
+            Set<String> intersect = new HashSet<>(profilerInt);
+            intersect.retainAll(tourGuideSpes);
+
+            for (String interest: intersect)
+            {
+                result += " " + interest;
+            }
+
+            System.out.println("Found intersect: " + result);
+
+            return result;
         }
     }
 
