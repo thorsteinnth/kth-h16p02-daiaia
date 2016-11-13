@@ -1,7 +1,6 @@
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.TickerBehaviour;
+import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -9,13 +8,14 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.proto.states.MsgReceiver;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Iterator;
 
 public class ProfilerAgent extends Agent
 {
-    // Requests virtual tour from tour guide agent
+    // Request virtual tours from tour guide agents
     // Get detailed info on objects in tour from curator agent
 
     private String age;
@@ -27,9 +27,10 @@ public class ProfilerAgent extends Agent
     private ArrayList<Artifact> visitedItems;
 
     private DFAgentDescription dfTourGuideServiceTemplate;
-    private AID[] tourGuideAgents;
+    private ArrayList<AID> tourGuides;
+    private DataStore tourReplyDataStore;
 
-    // TODO Get curator agent from tour guide reply
+    // TODO Get curator from DF
     private AID curatorAgent = new AID("curatorAgent", AID.ISLOCALNAME);
 
     //region Setup and takeDown
@@ -54,19 +55,17 @@ public class ProfilerAgent extends Agent
         }
 
         this.visitedItems = new ArrayList<>();
+        this.tourGuides = new ArrayList<>();
+        this.tourReplyDataStore = new DataStore();
 
-        this.addBehaviour(new TourRequestPerformer());
-        // Let's make him request a new tour every 10 seconds
-
-        //Create the DF tour-guide templete
+        // Create the DF tour-guide template
         this.dfTourGuideServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType("virtual-tour-guide");
         sd.setName("Virtual-Tour guide");
         this.dfTourGuideServiceTemplate.addServices(sd);
 
-        this.addBehaviour(new TourRequestPerformer());
-        // Let's just make him request a new tour every 10 seconds
+        // Let's request tours every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready: " + this.toString());
@@ -84,17 +83,369 @@ public class ProfilerAgent extends Agent
 
     private class TourRequestTicker extends TickerBehaviour
     {
-        public TourRequestTicker(Agent agent, long timeout)
+        public TourRequestTicker(ProfilerAgent agent, long timeout)
         {
             super(agent, timeout);
         }
 
         public void onTick()
         {
-            myAgent.addBehaviour(new TourRequestPerformer());
+            // Clear the reply data store from the last iteration
+            ((ProfilerAgent)myAgent).tourReplyDataStore.clear();
+            // Update available tour guide list
+            getAvailableTourGuides();
+            if (tourGuides.size() == 0)
+            {
+                System.out.println(myAgent.getName() + ": No known tour guides. Aborting...");
+                return;
+            }
+            // Request tours
+            myAgent.addBehaviour(new TourRequestSequentialBehaviour((ProfilerAgent)myAgent));
         }
     }
 
+    private class TourRequestSequentialBehaviour extends SequentialBehaviour
+    {
+        // TODO Call behaviours from here, don't have them nested
+        public TourRequestSequentialBehaviour(ProfilerAgent agent)
+        {
+            super(agent);
+            this.addSubBehaviour(new RequestToursParallelBehaviour(agent));
+            this.addSubBehaviour(new ReceiveToursParallelBehaviour(agent));
+            this.addSubBehaviour(new SelectBestTourAndRequestItBehaviour(agent));
+        }
+    }
+
+    //region Request tour behaviours
+
+    private class RequestToursParallelBehaviour extends ParallelBehaviour
+    {
+        public RequestToursParallelBehaviour(ProfilerAgent agent)
+        {
+            // Set owner agent and terminate when all children are done
+            super(agent, WHEN_ALL);
+
+            // Request tours from all tour guides
+            for (AID tourGuide : tourGuides)
+            {
+                this.addSubBehaviour(new RequestTourFromTourGuideBehaviour(agent, tourGuide));
+            }
+        }
+    }
+
+    private class RequestTourFromTourGuideBehaviour extends OneShotBehaviour
+    {
+        private AID tourGuide;
+
+        public RequestTourFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
+        {
+            super(agent);
+            this.tourGuide = tourGuide;
+        }
+
+        public void action()
+        {
+            System.out.println("Requesting tour from tour guide: " + this.tourGuide.getName());
+
+            ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+            cfp.addReceiver(this.tourGuide);
+            cfp.setContent(interests);
+            cfp.setConversationId("tour-offer-request");
+            myAgent.send(cfp);
+        }
+    }
+
+    //endregion
+
+    //region Receive tour behaviours
+
+    private class ReceiveToursParallelBehaviour extends ParallelBehaviour
+    {
+        public ReceiveToursParallelBehaviour(ProfilerAgent agent)
+        {
+            // Set owner agent and terminate when all children are done
+            super(agent, WHEN_ALL);
+
+            // Receive tour from all known tour guides
+            for (AID tourGuide : tourGuides)
+            {
+                this.addSubBehaviour(new ReceiveTourFromTourGuideBehaviour(agent, tourGuide));
+            }
+        }
+    }
+
+    private class ReceiveTourFromTourGuideBehaviour extends MsgReceiver
+    {
+        public ReceiveTourFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
+        {
+            // From documentation:
+            // Put into the given key of the given datastore the received message according
+            // to the given message template and timeout.
+            // If the timeout expires before any message arrives,
+            // the behaviour terminates and put null into the datastore.
+
+            super(agent,
+                    MessageTemplate.and(
+                            MessageTemplate.MatchConversationId("tour-offer-request"),
+                            MessageTemplate.MatchSender(tourGuide)
+                    ),
+                    MsgReceiver.INFINITE,
+                    agent.tourReplyDataStore,
+                    tourGuide.getName()
+            );
+        }
+    }
+
+    //endregion
+
+    //region Select best tour behaviours
+
+    private class SelectBestTourAndRequestItBehaviour extends OneShotBehaviour
+    {
+        public SelectBestTourAndRequestItBehaviour(ProfilerAgent agent)
+        {
+            super(agent);
+        }
+
+        public void action()
+        {
+            ACLMessage bestOffer = selectBestTourOffer();
+
+            if (bestOffer == null)
+            {
+                System.out.println(getAgent().getName() + " - could not select best offer");
+                return;
+            }
+
+            ACLMessage acceptMessage = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+            acceptMessage.addReceiver(bestOffer.getSender());
+            acceptMessage.setContent(interests);
+            acceptMessage.setConversationId("tour-offer-request-acceptance");
+            myAgent.send(acceptMessage);
+
+            // Add a nested behaviour to receive
+            // TODO: Probably better to not do it like this
+            myAgent.addBehaviour(new ReceiveTourBehaviour((ProfilerAgent)myAgent, bestOffer.getSender()));
+        }
+    }
+
+    private class ReceiveTourBehaviour extends MsgReceiver
+    {
+        public ReceiveTourBehaviour(ProfilerAgent agent, AID tourGuide)
+        {
+            // NOTE: We don't use the data store here, just the handleMessage() function
+            // Just using an arbitrary DataStore and key
+
+            super(agent,
+                    MessageTemplate.and(
+                            MessageTemplate.MatchConversationId("tour-offer-request-acceptance"),
+                            MessageTemplate.MatchSender(tourGuide)
+                    ),
+                    MsgReceiver.INFINITE,
+                    new DataStore(),
+                    "key"
+            );
+        }
+
+        @Override
+        protected void handleMessage(ACLMessage msg)
+        {
+            super.handleMessage(msg);
+
+            if (msg.getPerformative() == ACLMessage.INFORM)
+            {
+                // Tour received (list of artifact headers)
+                System.out.println("Received tour from agent: " + msg.getSender().getName());
+
+                ArrayList<ArtifactHeader> artifactHeaders;
+
+                try
+                {
+                    artifactHeaders = (ArrayList<ArtifactHeader>) msg.getContentObject();
+                }
+                catch (UnreadableException ex)
+                {
+                    System.err.println(ex.toString());
+                    artifactHeaders = new ArrayList<>();
+                }
+
+                // Print out virtual tour
+                System.out.println();
+                System.out.println("The virtual tour:");
+                for (ArtifactHeader header : artifactHeaders)
+                {
+                    System.out.println(header.getId() + " - " + header.getName());
+                }
+                System.out.println();
+
+                // TODO Don't use nested behaviours
+                myAgent.addBehaviour(new GetArtifactDetails(artifactHeaders));
+            }
+            else
+            {
+                System.err.println("Unexpected ACL message performative: " + msg.getPerformative());
+            }
+        }
+    }
+
+    //endregion
+
+    // TODO Update to use a higher level subclass behaviour
+    private class GetArtifactDetails extends Behaviour
+    {
+        private ArrayList<ArtifactHeader> artifacts;
+        private ArrayList<Artifact> receivedArtifactsWithDetails;
+        private int step;
+        private int sentRequestCount;
+        private int receivedResponseCount;
+        private MessageTemplate mt;
+
+        public GetArtifactDetails(ArrayList<ArtifactHeader> artifacts)
+        {
+            this.artifacts = artifacts;
+            this.receivedArtifactsWithDetails = new ArrayList<>();
+            this.step = 0;
+            this.sentRequestCount = 0;
+            this.receivedResponseCount = 0;
+        }
+
+        public void action()
+        {
+            switch (step)
+            {
+                case 0:
+
+                    System.out.println(myAgent.getAID().getName() + " Get artifact details entered step 0");
+
+                    for (ArtifactHeader artifact : this.artifacts)
+                    {
+                        ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
+                        cfp.addReceiver(curatorAgent);
+                        cfp.setContent(String.valueOf(artifact.getId()));
+                        cfp.setConversationId("get-artifact-details");
+
+                        myAgent.send(cfp);
+                        this.sentRequestCount++;
+                    }
+
+                    this.mt = MessageTemplate.MatchConversationId("get-artifact-details");
+
+                    step = 1;
+
+                    break;
+
+                case 1:
+
+                    // Receive all requested artifact details
+
+                    ACLMessage reply = myAgent.receive(this.mt);
+
+                    if (reply != null)
+                    {
+                        if (reply.getPerformative() == ACLMessage.INFORM)
+                        {
+                            try
+                            {
+                                // TODO Verify that this works
+                                Artifact receivedArtifact = (Artifact)reply.getContentObject();
+                                this.receivedArtifactsWithDetails.add(receivedArtifact);
+                            }
+                            catch (UnreadableException ex)
+                            {
+                                System.err.println("ProfilerAgent.GetArtifactDetails.action(): " + ex.toString());
+                            }
+
+                        }
+                        this.receivedResponseCount++;
+
+                        if (this.receivedResponseCount >= this.sentRequestCount)
+                        {
+                            this.step = 2;
+                            System.out.println("Received artifact details: " + this.receivedArtifactsWithDetails.toString());
+                        }
+                    }
+                    else
+                    {
+                        block();
+                    }
+
+                    break;
+            }
+        }
+
+        public boolean done()
+        {
+            return this.step == 2;
+        }
+    }
+
+    //endregion
+
+    private void getAvailableTourGuides()
+    {
+        ArrayList<AID> foundTourGuides = new ArrayList<>();
+
+        try
+        {
+            DFAgentDescription[] result = DFService.search(this, this.dfTourGuideServiceTemplate);
+            for (int i = 0; i < result.length; ++i)
+            {
+                foundTourGuides.add(result[i].getName());
+            }
+
+            System.out.println(getName() + ": Found the following tour-guide agents:");
+            for (AID tourGuide : foundTourGuides)
+                System.out.println(tourGuide);
+
+            this.tourGuides = foundTourGuides;
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
+    }
+
+    private ACLMessage selectBestTourOffer()
+    {
+        int maxNumberOfInterestingObjects = 0;
+        ACLMessage bestOffer = null;
+
+        Iterator it = tourReplyDataStore.values().iterator();
+        while (it.hasNext())
+        {
+            if (it.next() == null)
+                continue;
+
+            ACLMessage msg = (ACLMessage)it.next();
+            int numberOfInterestingObjects = Integer.parseInt(msg.getContent());
+            if (numberOfInterestingObjects > maxNumberOfInterestingObjects)
+            {
+                bestOffer = msg;
+                maxNumberOfInterestingObjects = numberOfInterestingObjects;
+            }
+        }
+
+        return bestOffer;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ProfilerAgent{" +
+                "age='" + age + '\'' +
+                ", occupation='" + occupation + '\'' +
+                ", interests='" + interests + '\'' +
+                ", visitedItems=" + visitedItems +
+                ", dfTourGuideServiceTemplate=" + dfTourGuideServiceTemplate +
+                ", tourGuides=" + tourGuides +
+                ", tourReplyDataStore=" + tourReplyDataStore +
+                ", curatorAgent=" + curatorAgent +
+                '}';
+    }
+
+    //region Old behaviours not in use
+
+    /*
     private class TourRequestPerformer extends Behaviour
     {
         private MessageTemplate mt; // The template to receive replies
@@ -279,108 +630,7 @@ public class ProfilerAgent extends Agent
             return step == 4;
         }
     }
-
-    private class GetArtifactDetails extends Behaviour
-    {
-        private ArrayList<ArtifactHeader> artifacts;
-        private ArrayList<Artifact> receivedArtifactsWithDetails;
-        private int step;
-        private int sentRequestCount;
-        private int receivedResponseCount;
-        private MessageTemplate mt;
-
-        public GetArtifactDetails(ArrayList<ArtifactHeader> artifacts)
-        {
-            this.artifacts = artifacts;
-            this.receivedArtifactsWithDetails = new ArrayList<>();
-            this.step = 0;
-            this.sentRequestCount = 0;
-            this.receivedResponseCount = 0;
-        }
-
-        public void action()
-        {
-            switch (step)
-            {
-                case 0:
-
-                    System.out.println(myAgent.getAID().getName() + " Get artifact details entered step 0");
-
-                    for (ArtifactHeader artifact : this.artifacts)
-                    {
-                        ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
-                        cfp.addReceiver(curatorAgent);
-                        cfp.setContent(String.valueOf(artifact.getId()));
-                        cfp.setConversationId("get-artifact-details");
-
-                        myAgent.send(cfp);
-                        this.sentRequestCount++;
-                    }
-
-                    this.mt = MessageTemplate.MatchConversationId("get-artifact-details");
-
-                    step = 1;
-
-                    break;
-
-                case 1:
-
-                    // Receive all requested artifact details
-
-                    ACLMessage reply = myAgent.receive(this.mt);
-
-                    if (reply != null)
-                    {
-                        if (reply.getPerformative() == ACLMessage.INFORM)
-                        {
-                            try
-                            {
-                                // TODO Verify that this works
-                                Artifact receivedArtifact = (Artifact)reply.getContentObject();
-                                this.receivedArtifactsWithDetails.add(receivedArtifact);
-                            }
-                            catch (UnreadableException ex)
-                            {
-                                System.err.println("ProfilerAgent.GetArtifactDetails.action(): " + ex.toString());
-                            }
-
-                        }
-                        this.receivedResponseCount++;
-
-                        if (this.receivedResponseCount >= this.sentRequestCount)
-                        {
-                            this.step = 2;
-                            System.out.println("Received artifact details: " + this.receivedArtifactsWithDetails.toString());
-                        }
-                    }
-                    else
-                    {
-                        block();
-                    }
-
-                    break;
-            }
-        }
-
-        public boolean done()
-        {
-            return this.step == 2;
-        }
-    }
+    */
 
     //endregion
-
-    @Override
-    public String toString()
-    {
-        return "ProfilerAgent{" +
-                "age='" + age + '\'' +
-                ", occupation='" + occupation + '\'' +
-                ", interests='" + interests + '\'' +
-                ", visitedItems=" + visitedItems +
-                ", dfTourGuideServiceTemplate=" + dfTourGuideServiceTemplate +
-                ", tourGuideAgents=" + Arrays.toString(tourGuideAgents) +
-                ", curatorAgent=" + curatorAgent +
-                '}';
-    }
 }
