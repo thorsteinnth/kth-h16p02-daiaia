@@ -50,7 +50,7 @@ public class Artifact implements Serializable
         return "Artifact{" +
                 "id=" + id +
                 ", type=" + type +
-                ", name=" + name +
+                ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 '}';
     }

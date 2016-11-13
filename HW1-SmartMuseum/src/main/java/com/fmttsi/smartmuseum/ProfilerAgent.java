@@ -106,21 +106,21 @@ public class ProfilerAgent extends Agent
 
     private class TourRequestSequentialBehaviour extends SequentialBehaviour
     {
-        // TODO Call behaviours from here, don't have them nested
         public TourRequestSequentialBehaviour(ProfilerAgent agent)
         {
             super(agent);
-            this.addSubBehaviour(new RequestToursParallelBehaviour(agent));
-            this.addSubBehaviour(new ReceiveToursParallelBehaviour(agent));
-            this.addSubBehaviour(new SelectBestTourAndRequestItBehaviour(agent));
+            this.addSubBehaviour(new RequestTourOffersParallelBehaviour(agent));
+            this.addSubBehaviour(new ReceiveTourOffersParallelBehaviour(agent));
+            this.addSubBehaviour(new SelectBestTourOfferAndAcceptItBehaviour(agent));
+            this.addSubBehaviour(new ReceiveTourBehaviour(agent));
         }
     }
 
-    //region Request tour behaviours
+    //region Request tour offers behaviours
 
-    private class RequestToursParallelBehaviour extends ParallelBehaviour
+    private class RequestTourOffersParallelBehaviour extends ParallelBehaviour
     {
-        public RequestToursParallelBehaviour(ProfilerAgent agent)
+        public RequestTourOffersParallelBehaviour(ProfilerAgent agent)
         {
             // Set owner agent and terminate when all children are done
             super(agent, WHEN_ALL);
@@ -128,16 +128,16 @@ public class ProfilerAgent extends Agent
             // Request tours from all tour guides
             for (AID tourGuide : tourGuides)
             {
-                this.addSubBehaviour(new RequestTourFromTourGuideBehaviour(agent, tourGuide));
+                this.addSubBehaviour(new RequestTourOfferFromTourGuideBehaviour(agent, tourGuide));
             }
         }
     }
 
-    private class RequestTourFromTourGuideBehaviour extends OneShotBehaviour
+    private class RequestTourOfferFromTourGuideBehaviour extends OneShotBehaviour
     {
         private AID tourGuide;
 
-        public RequestTourFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
+        public RequestTourOfferFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
         {
             super(agent);
             this.tourGuide = tourGuide;
@@ -157,26 +157,26 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
-    //region Receive tour behaviours
+    //region Receive tour offers behaviours
 
-    private class ReceiveToursParallelBehaviour extends ParallelBehaviour
+    private class ReceiveTourOffersParallelBehaviour extends ParallelBehaviour
     {
-        public ReceiveToursParallelBehaviour(ProfilerAgent agent)
+        public ReceiveTourOffersParallelBehaviour(ProfilerAgent agent)
         {
             // Set owner agent and terminate when all children are done
             super(agent, WHEN_ALL);
 
-            // Receive tour from all known tour guides
+            // Receive tour offer from all known tour guides
             for (AID tourGuide : tourGuides)
             {
-                this.addSubBehaviour(new ReceiveTourFromTourGuideBehaviour(agent, tourGuide));
+                this.addSubBehaviour(new ReceiveTourOfferFromTourGuideBehaviour(agent, tourGuide));
             }
         }
     }
 
-    private class ReceiveTourFromTourGuideBehaviour extends MsgReceiver
+    private class ReceiveTourOfferFromTourGuideBehaviour extends MsgReceiver
     {
-        public ReceiveTourFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
+        public ReceiveTourOfferFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
         {
             // From documentation:
             // Put into the given key of the given datastore the received message according
@@ -198,11 +198,11 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
-    //region Select best tour behaviours
+    //region Get best tour behaviours
 
-    private class SelectBestTourAndRequestItBehaviour extends OneShotBehaviour
+    private class SelectBestTourOfferAndAcceptItBehaviour extends OneShotBehaviour
     {
-        public SelectBestTourAndRequestItBehaviour(ProfilerAgent agent)
+        public SelectBestTourOfferAndAcceptItBehaviour(ProfilerAgent agent)
         {
             super(agent);
         }
@@ -222,24 +222,22 @@ public class ProfilerAgent extends Agent
             acceptMessage.setContent(interests);
             acceptMessage.setConversationId("tour-offer-request-acceptance");
             myAgent.send(acceptMessage);
-
-            // Add a nested behaviour to receive
-            // TODO: Probably better to not do it like this
-            myAgent.addBehaviour(new ReceiveTourBehaviour((ProfilerAgent)myAgent, bestOffer.getSender()));
         }
     }
 
     private class ReceiveTourBehaviour extends MsgReceiver
     {
-        public ReceiveTourBehaviour(ProfilerAgent agent, AID tourGuide)
+        public ReceiveTourBehaviour(ProfilerAgent agent)
         {
-            // NOTE: We don't use the data store here, just the handleMessage() function
+            // NOTE:
+            // We don't use the data store here, just the handleMessage() function
             // Just using an arbitrary DataStore and key
 
+            // TODO: Do we need to have the message template more explicit?
             super(agent,
                     MessageTemplate.and(
                             MessageTemplate.MatchConversationId("tour-offer-request-acceptance"),
-                            MessageTemplate.MatchSender(tourGuide)
+                            MessageTemplate.MatchPerformative(ACLMessage.INFORM)
                     ),
                     MsgReceiver.INFINITE,
                     new DataStore(),
@@ -261,7 +259,7 @@ public class ProfilerAgent extends Agent
 
                 try
                 {
-                    artifactHeaders = (ArrayList<ArtifactHeader>) msg.getContentObject();
+                    artifactHeaders = (ArrayList<ArtifactHeader>)msg.getContentObject();
                 }
                 catch (UnreadableException ex)
                 {
@@ -269,16 +267,16 @@ public class ProfilerAgent extends Agent
                     artifactHeaders = new ArrayList<>();
                 }
 
-                // Print out virtual tour
+                // Print out virtual tour headers
                 System.out.println();
-                System.out.println("The virtual tour:");
+                System.out.println("The virtual tour (headers):");
                 for (ArtifactHeader header : artifactHeaders)
                 {
                     System.out.println(header.getId() + " - " + header.getName());
                 }
                 System.out.println();
 
-                // TODO Don't use nested behaviours
+                // Get artifact details
                 myAgent.addBehaviour(new GetArtifactDetails(artifactHeaders));
             }
             else
@@ -288,9 +286,6 @@ public class ProfilerAgent extends Agent
         }
     }
 
-    //endregion
-
-    // TODO Update to use a higher level subclass behaviour
     private class GetArtifactDetails extends Behaviour
     {
         private ArrayList<ArtifactHeader> artifacts;
@@ -314,8 +309,6 @@ public class ProfilerAgent extends Agent
             switch (step)
             {
                 case 0:
-
-                    System.out.println(myAgent.getAID().getName() + " Get artifact details entered step 0");
 
                     for (ArtifactHeader artifact : this.artifacts)
                     {
@@ -346,7 +339,6 @@ public class ProfilerAgent extends Agent
                         {
                             try
                             {
-                                // TODO Verify that this works
                                 Artifact receivedArtifact = (Artifact)reply.getContentObject();
                                 this.receivedArtifactsWithDetails.add(receivedArtifact);
                             }
@@ -361,7 +353,11 @@ public class ProfilerAgent extends Agent
                         if (this.receivedResponseCount >= this.sentRequestCount)
                         {
                             this.step = 2;
-                            System.out.println("Received artifact details: " + this.receivedArtifactsWithDetails.toString());
+
+                            // Print artifacts with details
+                            System.out.println("Received artifact details:");
+                            for (Artifact artifact : this.receivedArtifactsWithDetails)
+                                System.out.println(artifact.toString());
                         }
                     }
                     else
@@ -381,6 +377,8 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
+    //endregion
+
     private void getAvailableTourGuides()
     {
         ArrayList<AID> foundTourGuides = new ArrayList<>();
@@ -393,9 +391,7 @@ public class ProfilerAgent extends Agent
                 foundTourGuides.add(result[i].getName());
             }
 
-            System.out.println(getName() + ": Found the following tour-guide agents:");
-            for (AID tourGuide : foundTourGuides)
-                System.out.println(tourGuide);
+            System.out.println(getName() + " - Found " + foundTourGuides.size() + " tour guides");
 
             this.tourGuides = foundTourGuides;
         }
