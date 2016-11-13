@@ -3,6 +3,7 @@ import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.SenderBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -137,7 +138,14 @@ public class TourGuideAgent extends Agent
                                             if(msg.getPerformative() == ACLMessage.CFP)
                                             {
                                                 int artifactsCount = artifacts.size();
-                                                addBehaviour(new SendArtifactsCount(artifactsCount, reply));
+                                                reply.setPerformative(ACLMessage.PROPOSE);
+                                                reply.setContent(String.valueOf(artifactsCount));
+
+                                                System.out.println(myAgent.getLocalName() +
+                                                        " is sending artifacts count: "
+                                                        + String.valueOf(artifactsCount));
+
+                                                addBehaviour(new SenderBehaviour(myAgent, reply));
                                             }
                                             else if(msg.getPerformative() == ACLMessage.ACCEPT_PROPOSAL)
                                             {
@@ -164,9 +172,6 @@ public class TourGuideAgent extends Agent
         // Returns a space separated string of interests that the guide specialises in and the profiler is interested in
         private String getMutualInterests(String profilerInterests)
         {
-            System.out.println("Finding mutual interests for profiler: " + profilerInterests +
-                    " and guide: " + specialities);
-
             String result = "";
 
             Set<String> profilerInt = new HashSet<>(Arrays.asList(profilerInterests.split(" ")));
@@ -180,31 +185,9 @@ public class TourGuideAgent extends Agent
                 result += " " + interest;
             }
 
-            System.out.println("Found intersect: " + result);
+            System.out.println("Found intersect for tourGuide " + myAgent.getName() + " :" + result);
 
             return result;
-        }
-    }
-
-    private class SendArtifactsCount extends OneShotBehaviour
-    {
-        private int artifactsCount;
-        private ACLMessage msg;
-
-        public SendArtifactsCount(int artifactsCount, ACLMessage reply)
-        {
-            this.artifactsCount = artifactsCount;
-            this.msg = reply;
-        }
-
-        public void action()
-        {
-            System.out.println(myAgent.getLocalName() + " is sending artifacts count: "
-                    + String.valueOf(artifactsCount));
-            // Send the number of artifacts to the profiler
-            this.msg.setPerformative(ACLMessage.PROPOSE);
-            this.msg.setContent(String.valueOf(artifactsCount));
-            this.myAgent.send(msg);
         }
     }
 

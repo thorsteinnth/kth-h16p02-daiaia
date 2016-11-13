@@ -237,8 +237,9 @@ public class CuratorAgent extends Agent
         artifacts.add(new Artifact(2, Artifact.ArtifactType.Item, "Cool item", "Description of this cool item"));
         artifacts.add(new Artifact(3, Artifact.ArtifactType.Other, "Cool something", "Description of something"));
         artifacts.add(new Artifact(4, Artifact.ArtifactType.Painting, "Cool painting", "Description of this cool painting"));
-        artifacts.add(new Artifact(5, Artifact.ArtifactType.Sculpture, "Cool sculpture", "Description of this cool sculpture"));
-        artifacts.add(new Artifact(6, Artifact.ArtifactType.Sculpture, "Cool sculpture 2", "Description of this cool sculpture"));
+        artifacts.add(new Artifact(5, Artifact.ArtifactType.Painting, "Cool painting 2", "Description of this cool painting"));
+        artifacts.add(new Artifact(6, Artifact.ArtifactType.Sculpture, "Cool sculpture", "Description of this cool sculpture"));
+        artifacts.add(new Artifact(7, Artifact.ArtifactType.Sculpture, "Cool sculpture 2", "Description of this cool sculpture"));
 
         return artifacts;
     }
