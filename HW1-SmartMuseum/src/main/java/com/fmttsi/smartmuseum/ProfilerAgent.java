@@ -409,9 +409,6 @@ public class ProfilerAgent extends Agent
         Iterator it = tourReplyDataStore.values().iterator();
         while (it.hasNext())
         {
-            if (it.next() == null)
-                continue;
-
             ACLMessage msg = (ACLMessage)it.next();
             int numberOfInterestingObjects = Integer.parseInt(msg.getContent());
             if (numberOfInterestingObjects > maxNumberOfInterestingObjects)
