@@ -1,4 +1,3 @@
-import com.sun.tools.javac.util.Pair;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
@@ -10,16 +9,13 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.StringACLCodec;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class TourGuideAgent extends Agent
 {
     private DFAgentDescription dfCuratorServiceTemplate;
-    private AID[] curatorAgents;
+    private AID curatorAgent;
 
     protected void setup()
     {
@@ -27,7 +23,7 @@ public class TourGuideAgent extends Agent
 
         RegisterTourGuideService();
 
-        //Create the DF curator templete
+        //Create the DF curator template
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType("get-artifacts");
@@ -45,7 +41,7 @@ public class TourGuideAgent extends Agent
         System.out.println("TourGuideAgent " + getAID().getName() + " terminating.");
     }
 
-    // Registers the tour-guide service in the yellow pages
+    // Registers the virtual tour-guide service in the yellow pages
     private void RegisterTourGuideService()
     {
         DFAgentDescription dfd = new DFAgentDescription();
@@ -63,7 +59,7 @@ public class TourGuideAgent extends Agent
             fe.printStackTrace();
         }
     }
-    // Deregister the tour-guide service from the yellow pages
+    // Deregister the virtual tour-guide service from the yellow pages
     private void DeregisterTourGuideService()
     {
         try
@@ -134,12 +130,12 @@ public class TourGuideAgent extends Agent
     private class SendArtifactsCount extends OneShotBehaviour
     {
         private int artifactsCount;
-        private ACLMessage reply;
+        private ACLMessage msg;
 
         public SendArtifactsCount(int artifactsCount, ACLMessage reply)
         {
             this.artifactsCount = artifactsCount;
-            this.reply = reply;
+            this.msg = reply;
         }
 
         public void action()
@@ -147,31 +143,30 @@ public class TourGuideAgent extends Agent
             System.out.println(myAgent.getLocalName() + " is sending artifacts count: "
                     + String.valueOf(artifactsCount));
             // Send the number of artifacts to the profiler
-            this.reply.setPerformative(ACLMessage.PROPOSE);
-            this.reply.setContent(String.valueOf(artifactsCount));
-            this.myAgent.send(reply);
+            this.msg.setPerformative(ACLMessage.PROPOSE);
+            this.msg.setContent(String.valueOf(artifactsCount));
+            this.myAgent.send(msg);
         }
     }
 
     private class SendVirtualTour extends OneShotBehaviour
     {
         private ArrayList<Artifact> artifacts;
-        private ACLMessage reply;
+        private ACLMessage msg;
 
         public SendVirtualTour(ArrayList<Artifact> artifacts, ACLMessage reply)
         {
             this.artifacts = artifacts;
-            this.reply = reply;
+            this.msg = reply;
         }
 
         public void action()
         {
-            // TODO: Also send curator agent for profiler to contact for details
             System.out.println(myAgent.getLocalName() + " is sending Virtual-Tour");
 
             try
             {
-                this.reply.setPerformative(ACLMessage.INFORM);
+                this.msg.setPerformative(ACLMessage.INFORM);
 
                 ArrayList<ArtifactHeader> artifactHeaders = new ArrayList<>();
 
@@ -180,15 +175,15 @@ public class TourGuideAgent extends Agent
                     artifactHeaders.add(new ArtifactHeader(artifact.getId(), artifact.getName()));
                 }
 
-                this.reply.setContentObject(artifactHeaders);
+                this.msg.setContentObject(artifactHeaders);
             }
             catch (Exception ex)
             {
-                this.reply.setPerformative(ACLMessage.FAILURE);
+                this.msg.setPerformative(ACLMessage.FAILURE);
                 ex.printStackTrace();
             }
 
-            this.myAgent.send(reply);
+            this.myAgent.send(msg);
         }
     }
 
@@ -197,10 +192,7 @@ public class TourGuideAgent extends Agent
         private String interests;
         private ArtifactCallback delegate;
         private MessageTemplate mt;
-        private int repliesCount;
         private int step;
-
-        // TODO : Create list of lists of artifacts from all curators
 
         public GetArtifacts(String interests, ArtifactCallback delegate)
         {
@@ -214,16 +206,21 @@ public class TourGuideAgent extends Agent
             switch (this.step)
             {
                 case 0:
-                    // Start by update the list of all curator agents available
+                    // Start by finding the curator agent (there should only be one)
                     try
                     {
                         DFAgentDescription[] result = DFService.search(myAgent, dfCuratorServiceTemplate);
-                        System.out.println("Found the following curator agents:");
-                        curatorAgents = new AID[result.length];
-                        for (int i = 0; i < result.length; ++i)
+
+                        if(result.length > 0)
                         {
-                            curatorAgents[i] = result[i].getName();
-                            System.out.println(curatorAgents[i].getName());
+                            System.out.println("Found curator agent:");
+                            curatorAgent = result[0].getName();
+                            System.out.println(curatorAgent.getName());
+                        }
+                        else
+                        {
+                            System.out.println("Could not find curator agent");
+                            step = 2;
                         }
                     }
                     catch (FIPAException fe)
@@ -233,12 +230,7 @@ public class TourGuideAgent extends Agent
 
                     // Send request to curator agent to get list of artifacts for given interests
                     ACLMessage getListOfArtifactsMsg = new ACLMessage(ACLMessage.REQUEST);
-
-                    for (int i = 0; i < curatorAgents.length; ++i)
-                    {
-                        getListOfArtifactsMsg.addReceiver(curatorAgents[i]);
-                    }
-
+                    getListOfArtifactsMsg.addReceiver(curatorAgent);
                     getListOfArtifactsMsg.setLanguage("English");
                     getListOfArtifactsMsg.setContent(interests);
                     getListOfArtifactsMsg.setConversationId("get-artifacts-for-interest");
@@ -259,9 +251,6 @@ public class TourGuideAgent extends Agent
                     if(reply != null)
                     {
                         // Reply received
-                        repliesCount++;
-
-                        //TODO the delegate should return list of list of artifacts
 
                         if(reply.getPerformative() == ACLMessage.REFUSE)
                         {
@@ -285,11 +274,7 @@ public class TourGuideAgent extends Agent
                             }
                         }
 
-                        if (repliesCount >= curatorAgents.length)
-                        {
-                            // We received all replies
-                            step = 2;
-                        }
+                        step = 2;
                     }
                     else
                     {
