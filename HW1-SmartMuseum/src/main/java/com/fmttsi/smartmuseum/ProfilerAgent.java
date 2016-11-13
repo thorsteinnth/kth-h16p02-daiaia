@@ -13,11 +13,12 @@ import jade.proto.states.MsgReceiver;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+/**
+ * Request virtual tours from tour guide agents
+ * Get detailed info on objects in tour from curator agent
+ * */
 public class ProfilerAgent extends Agent
 {
-    // Request virtual tours from tour guide agents
-    // Get detailed info on objects in tour from curator agent
-
     private String age;
     private String occupation;
     /**
