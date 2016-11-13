@@ -21,7 +21,7 @@ public class CuratorAgent extends Agent
     {
         this.artifacts = generateArtifacts();
 
-        RegisterCuratorService();
+        RegisterCuratorServices();
 
         this.addBehaviour(new ArtifactsForInterestServer());
         this.addBehaviour(new ArtifactDetailsServer());
@@ -35,15 +35,24 @@ public class CuratorAgent extends Agent
         System.out.println("CuratorAgent " + getAID().getName() + " terminating.");
     }
 
-    // Registers the curator service in the yellow pages
-    private void RegisterCuratorService()
+    // Registers the curator services in the yellow pages
+    private void RegisterCuratorServices()
     {
+        // Artifacts for interest
+        ServiceDescription artifactsForInterestService = new ServiceDescription();
+        artifactsForInterestService.setType("get-artifacts-for-interest");
+        artifactsForInterestService.setName("name-get-artifacts-for-interest");
+
+        // Artifact details
+        ServiceDescription artifactsDetailsService = new ServiceDescription();
+        artifactsDetailsService.setType("get-artifact-details");
+        artifactsDetailsService.setName("name-get-artifact-details");
+
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("get-artifacts");
-        sd.setName("get-artifacts-by-interest-and-id");
-        dfd.addServices(sd);
+        dfd.addServices(artifactsForInterestService);
+        dfd.addServices(artifactsDetailsService);
+
         try
         {
             DFService.register(this, dfd);
@@ -53,6 +62,7 @@ public class CuratorAgent extends Agent
             fe.printStackTrace();
         }
     }
+
     // Deregister the curator service from the yellow pages
     private void DeregisterCuratorService()
     {
