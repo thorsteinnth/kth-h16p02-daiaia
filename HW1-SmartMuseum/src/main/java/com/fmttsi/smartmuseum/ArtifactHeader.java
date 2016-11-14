@@ -1,5 +1,10 @@
 import java.io.Serializable;
 
+/**
+ * Class representing an artifact header.
+ * The artifact header contains some information about an artifact,
+ * but is not the entire artifact.
+ * */
 public class ArtifactHeader implements Serializable
 {
     private int id;
