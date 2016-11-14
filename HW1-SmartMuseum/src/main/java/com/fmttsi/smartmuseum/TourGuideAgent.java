@@ -352,6 +352,9 @@ public class TourGuideAgent extends Agent
         }
     }
 
+    /**
+     * Handle subscription notifications from DF
+     */
     private class DFSubscriptionHandlerBehaviour extends SubscriptionInitiator
     {
         public DFSubscriptionHandlerBehaviour(Agent agent, ACLMessage msg)
