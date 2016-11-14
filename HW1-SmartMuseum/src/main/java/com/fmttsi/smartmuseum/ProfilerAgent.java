@@ -15,8 +15,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- * Request virtual tours from tour guide agents
- * Get detailed info on objects in tour from curator agent
+ * The profiler agent.
+ * Requests virtual tours from tour guide agents.
+ * Selects the best virtual tour and
+ * gets detailed info on objects in that tour from a curator agent
  * */
 public class ProfilerAgent extends Agent
 {
@@ -26,7 +28,6 @@ public class ProfilerAgent extends Agent
      * A space separated string of interests, e.g. "paintings sculptures buildings"
      */
     private String interests;
-    private ArrayList<Artifact> visitedItems;
 
     private DFAgentDescription dfTourGuideServiceTemplate;
     private ArrayList<AID> tourGuides;
@@ -56,7 +57,6 @@ public class ProfilerAgent extends Agent
             doDelete();
         }
 
-        this.visitedItems = new ArrayList<>();
         this.tourGuides = new ArrayList<>();
         this.tourReplyDataStore = new DataStore();
 
@@ -576,10 +576,10 @@ public class ProfilerAgent extends Agent
                 "age='" + age + '\'' +
                 ", occupation='" + occupation + '\'' +
                 ", interests='" + interests + '\'' +
-                ", visitedItems=" + visitedItems +
                 ", dfTourGuideServiceTemplate=" + dfTourGuideServiceTemplate +
                 ", tourGuides=" + tourGuides +
                 ", tourReplyDataStore=" + tourReplyDataStore +
+                ", dfCuratorServiceTemplate=" + dfCuratorServiceTemplate +
                 ", curatorAgent=" + curatorAgent +
                 '}';
     }
