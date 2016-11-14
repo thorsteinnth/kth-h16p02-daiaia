@@ -14,7 +14,7 @@ import jade.lang.acl.MessageTemplate;
 import java.util.*;
 
 /**
- * Tour Guide Agent: Registers a virtual-tour-guide service to the yellow pages.
+ * Registers a virtual-tour-guide service to the yellow pages.
  * Receives a call for proposal from ProfileAgent to ask for a virtual tour for particular interests.
  * Takes the intersection of his specialities and the profiler's interests and asks the CuratorAgent for artifacts
  * that matches the intersection. Then replies to the ProfilerAgent with the number of artifacts he got, as a proposal.

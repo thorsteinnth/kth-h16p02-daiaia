@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * CuratorAgent: monitors the gallery/museum.
+ * Monitors the gallery/museum.
  * Provides two services: get-artifacts-for-interest and get-artifact-details.
  */
 public class CuratorAgent extends Agent
