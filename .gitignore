@@ -14,3 +14,7 @@ hs_err_pid*
 # Intellij IDEA stuff
 **/.idea/workspace.xml 
 **/.idea/tasks.xml
+
+APDescription.txt
+uiDesigner.xml
+MTPs-Main-Container.txt
