@@ -14,7 +14,11 @@ import jade.lang.acl.MessageTemplate;
 import java.util.*;
 
 /**
- * Tour Guide Agent: Registers a
+ * Tour Guide Agent: Registers a virtual-tour-guide service to the yellow pages.
+ * Receives a call for proposal from ProfileAgent to ask for a virtual tour for particular interests.
+ * Takes the intersection of his specialities and the profiler's interests and asks the CuratorAgent for artifacts
+ * that matches the intersection. Then replies to the ProfilerAgent with the number of artifacts he got, as a proposal.
+ * If the ProfilerAgent accepts the proposal, the agent sends the virtual tour to the ProfilerAgent.
  */
 public class TourGuideAgent extends Agent
 {
@@ -51,7 +55,9 @@ public class TourGuideAgent extends Agent
         System.out.println("TourGuideAgent " + getAID().getName() + " terminating.");
     }
 
-    // Returns a space separated string of the tour guide specialities, e.g. "paintings sculptures buildings"
+    /**
+     * @return a space separated string of the tour guide specialities, e.g. "paintings sculptures buildings"
+     */
     private String getTourGuideSpecialities()
     {
         String specialities = "";
@@ -77,8 +83,9 @@ public class TourGuideAgent extends Agent
         return specialities;
     }
 
-
-    // Registers the virtual tour-guide service in the yellow pages
+    /**
+     * Registers the virtual tour-guide service in the yellow pages
+     */
     private void registerTourGuideService()
     {
         DFAgentDescription dfd = new DFAgentDescription();
@@ -96,7 +103,10 @@ public class TourGuideAgent extends Agent
             fe.printStackTrace();
         }
     }
-    // Deregister the virtual tour-guide service from the yellow pages
+
+    /**
+     * Deregister the virtual tour-guide service from the yellow pages
+     */
     private void deregisterTourGuideService()
     {
         try
@@ -109,6 +119,9 @@ public class TourGuideAgent extends Agent
         }
     }
 
+    /**
+     * A Cycle behaviour service for handling CFP's and requests for a virtual tour.
+     */
     private class VirtualTourServer extends CyclicBehaviour
     {
         public void action()
@@ -171,7 +184,11 @@ public class TourGuideAgent extends Agent
             }
         }
 
-        // Returns a space separated string of interests that the guide specialises in and the profiler is interested in
+        /**
+         * @param profilerInterests
+         * @return Returns a space separated string of interests that the guide specialises in
+         * and the profiler is interested in
+         */
         private String getMutualInterests(String profilerInterests)
         {
             String result = "";
@@ -193,6 +210,9 @@ public class TourGuideAgent extends Agent
         }
     }
 
+    /**
+     * OneShotBehaviour, sends a virtual tour to ProfilerAgent
+     */
     private class SendVirtualTour extends OneShotBehaviour
     {
         private ArrayList<Artifact> artifacts;
@@ -231,6 +251,9 @@ public class TourGuideAgent extends Agent
         }
     }
 
+    /**
+     * Basic behaviour that talks to the CuratorAgent and requests to get artifacts for particular interests.
+     */
     private class GetArtifacts extends Behaviour
     {
         private String interests;
@@ -320,6 +343,9 @@ public class TourGuideAgent extends Agent
         }
     }
 
+    /**
+     * @return a reference to the CuratorAgent, found in the yellow pages
+     */
     private boolean getCurator()
     {
         try
