@@ -13,11 +13,12 @@ import jade.proto.states.MsgReceiver;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+/**
+ * Request virtual tours from tour guide agents
+ * Get detailed info on objects in tour from curator agent
+ * */
 public class ProfilerAgent extends Agent
 {
-    // Request virtual tours from tour guide agents
-    // Get detailed info on objects in tour from curator agent
-
     private String age;
     private String occupation;
     /**
@@ -451,9 +452,6 @@ public class ProfilerAgent extends Agent
         Iterator it = tourReplyDataStore.values().iterator();
         while (it.hasNext())
         {
-            if (it.next() == null)
-                continue;
-
             ACLMessage msg = (ACLMessage)it.next();
             int numberOfInterestingObjects = Integer.parseInt(msg.getContent());
             if (numberOfInterestingObjects > maxNumberOfInterestingObjects)
