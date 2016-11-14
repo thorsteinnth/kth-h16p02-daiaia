@@ -34,8 +34,8 @@ public class TourGuideAgent extends Agent
         //Create the DF template to find the curator agent
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("get-artifacts-for-interest");
-        sd.setName("name-get-artifacts-for-interest");
+        sd.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_TYPE);
+        sd.setName(AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_NAME);
         this.dfCuratorServiceTemplate.addServices(sd);
 
         //add behavior to listen to virtual-tour requests from profiler agent
@@ -84,8 +84,8 @@ public class TourGuideAgent extends Agent
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("virtual-tour-guide");
-        sd.setName("Virtual-Tour guide");
+        sd.setType(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_TYPE);
+        sd.setName(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_NAME);
         dfd.addServices(sd);
         try
         {

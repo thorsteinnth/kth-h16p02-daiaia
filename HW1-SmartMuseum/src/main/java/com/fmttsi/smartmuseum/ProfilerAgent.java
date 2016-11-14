@@ -8,6 +8,7 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.proto.SubscriptionInitiator;
 import jade.proto.states.MsgReceiver;
 
 import java.util.ArrayList;
@@ -62,16 +63,22 @@ public class ProfilerAgent extends Agent
         // Create the DF tour-guide template
         this.dfTourGuideServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("virtual-tour-guide");
-        sd.setName("Virtual-Tour guide");
+        sd.setType(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_TYPE);
+        sd.setName(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_NAME);
         this.dfTourGuideServiceTemplate.addServices(sd);
+        ACLMessage tourGuideSubscriptionMessage =
+                DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfTourGuideServiceTemplate, null);
+        this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, tourGuideSubscriptionMessage));
 
-        //Create the DF template to find the curator agent
+        // Create the DF template to find the curator agent
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription curatorSD = new ServiceDescription();
-        curatorSD.setType("get-artifact-details");
-        curatorSD.setName("name-get-artifact-details");
+        curatorSD.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_TYPE);
+        curatorSD.setName(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_NAME);
         this.dfCuratorServiceTemplate.addServices(curatorSD);
+        ACLMessage curatorSubscriptionMessage =
+                DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfCuratorServiceTemplate, null);
+        this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, curatorSubscriptionMessage));
 
         // Let's request tours every 10 seconds
         this.addBehaviour(new TourRequestTicker(this, 10000));
@@ -392,6 +399,33 @@ public class ProfilerAgent extends Agent
     }
 
     //endregion
+
+    private class DFSubscriptionHandlerBehaviour extends SubscriptionInitiator
+    {
+        public DFSubscriptionHandlerBehaviour(Agent agent, ACLMessage msg)
+        {
+            super(agent, msg);
+        }
+
+        @Override
+        protected void handleInform(ACLMessage inform)
+        {
+            // TODO Search for agents
+
+            System.out.println(myAgent.getName()
+                    + " - DFSubscriptionHandlerBehaviour: inform message received: " + inform);
+
+            try
+            {
+                DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
+                System.out.println(dfds);
+            }
+            catch (FIPAException fe)
+            {
+                fe.printStackTrace();
+            }
+        }
+    }
 
     //endregion
 

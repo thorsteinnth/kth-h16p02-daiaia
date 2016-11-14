@@ -40,13 +40,13 @@ public class CuratorAgent extends Agent
     {
         // Artifacts for interest
         ServiceDescription artifactsForInterestService = new ServiceDescription();
-        artifactsForInterestService.setType("get-artifacts-for-interest");
-        artifactsForInterestService.setName("name-get-artifacts-for-interest");
+        artifactsForInterestService.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_TYPE);
+        artifactsForInterestService.setName(AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_NAME);
 
         // Artifact details
         ServiceDescription artifactsDetailsService = new ServiceDescription();
-        artifactsDetailsService.setType("get-artifact-details");
-        artifactsDetailsService.setName("name-get-artifact-details");
+        artifactsDetailsService.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_TYPE);
+        artifactsDetailsService.setName(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_NAME);
 
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
