@@ -8,14 +8,17 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.proto.SubscriptionInitiator;
 import jade.proto.states.MsgReceiver;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- * Request virtual tours from tour guide agents
- * Get detailed info on objects in tour from curator agent
+ * The profiler agent.
+ * Requests virtual tours from tour guide agents.
+ * Selects the best virtual tour and
+ * gets detailed info on objects in that tour from a curator agent
  * */
 public class ProfilerAgent extends Agent
 {
@@ -25,7 +28,6 @@ public class ProfilerAgent extends Agent
      * A space separated string of interests, e.g. "paintings sculptures buildings"
      */
     private String interests;
-    private ArrayList<Artifact> visitedItems;
 
     private DFAgentDescription dfTourGuideServiceTemplate;
     private ArrayList<AID> tourGuides;
@@ -55,25 +57,35 @@ public class ProfilerAgent extends Agent
             doDelete();
         }
 
-        this.visitedItems = new ArrayList<>();
         this.tourGuides = new ArrayList<>();
         this.tourReplyDataStore = new DataStore();
 
         // Create the DF tour-guide template
         this.dfTourGuideServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("virtual-tour-guide");
-        sd.setName("Virtual-Tour guide");
+        sd.setType(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_TYPE);
+        sd.setName(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_NAME);
         this.dfTourGuideServiceTemplate.addServices(sd);
+        // Sign up for notifications from DF for when agents that match our description registers
+        ACLMessage tourGuideSubscriptionMessage =
+                DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfTourGuideServiceTemplate, null);
+        this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, tourGuideSubscriptionMessage));
 
-        //Create the DF template to find the curator agent
+        // Create the DF template to find the curator agent
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription curatorSD = new ServiceDescription();
-        curatorSD.setType("get-artifact-details");
-        curatorSD.setName("name-get-artifact-details");
+        curatorSD.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_TYPE);
+        curatorSD.setName(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_NAME);
         this.dfCuratorServiceTemplate.addServices(curatorSD);
+        // Sign up for notifications from DF for when agents that match our description registers
+        ACLMessage curatorSubscriptionMessage =
+                DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfCuratorServiceTemplate, null);
+        this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, curatorSubscriptionMessage));
 
-        // Let's request tours every 10 seconds
+        // Let's request the first tour in 5 seconds
+        // (adding a Waker behaviour here just to try it out)
+        this.addBehaviour(new TourRequestWaker(this, 5000));
+        // Let's request tours every 10 seconds, starting 10 seconds from now.
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready: " + this.toString());
@@ -89,6 +101,21 @@ public class ProfilerAgent extends Agent
 
     //region Behaviours
 
+    private class TourRequestWaker extends WakerBehaviour
+    {
+        public TourRequestWaker(ProfilerAgent agent, long timeout)
+        {
+            super(agent, timeout);
+        }
+
+        @Override
+        protected void onWake()
+        {
+            super.onWake();
+            prepareAndIssueTourRequest();
+        }
+    }
+
     private class TourRequestTicker extends TickerBehaviour
     {
         public TourRequestTicker(ProfilerAgent agent, long timeout)
@@ -96,19 +123,10 @@ public class ProfilerAgent extends Agent
             super(agent, timeout);
         }
 
-        public void onTick()
+        @Override
+        protected void onTick()
         {
-            // Clear the reply data store from the last iteration
-            ((ProfilerAgent)myAgent).tourReplyDataStore.clear();
-            // Update available tour guide list
-            getAvailableTourGuides();
-            if (tourGuides.size() == 0)
-            {
-                System.out.println(myAgent.getName() + ": No known tour guides. Aborting...");
-                return;
-            }
-            // Request tours
-            myAgent.addBehaviour(new TourRequestSequentialBehaviour((ProfilerAgent)myAgent));
+            prepareAndIssueTourRequest();
         }
     }
 
@@ -319,9 +337,10 @@ public class ProfilerAgent extends Agent
             {
                 case 0:
 
-                    // Start by finding the curator, if we cannot find we break from the loop
-                    if(!getCurator())
+                    if (curatorAgent == null)
                     {
+                        System.out.println(myAgent.getName()
+                                + " - No known curator agent. Aborting get artifact details");
                         step = 2;
                         break;
                     }
@@ -393,9 +412,95 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
+    private class DFSubscriptionHandlerBehaviour extends SubscriptionInitiator
+    {
+        public DFSubscriptionHandlerBehaviour(Agent agent, ACLMessage msg)
+        {
+            super(agent, msg);
+        }
+
+        @Override
+        protected void handleInform(ACLMessage inform)
+        {
+            try
+            {
+                DFAgentDescription[] result = DFService.decodeNotification(inform.getContent());
+                for (int i = 0; i < result.length; ++i)
+                {
+                    AID resultAgent = result[i].getName();
+                    jade.util.leap.Iterator srvcIterator = result[i].getAllServices();
+
+                    while (srvcIterator.hasNext())
+                    {
+                        ServiceDescription srvcDescription = (ServiceDescription)srvcIterator.next();
+
+                        // Check what kind of agent this is (what services he provides)
+
+                        switch (srvcDescription.getName())
+                        {
+                            case AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_NAME:
+                                // This is a curator, let's save him
+                                System.out.println(myAgent.getName() + " - Found curator: " + resultAgent);
+                                curatorAgent = resultAgent;
+                                break;
+                            case AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_NAME:
+                                // This is a virtual tour guide, let's add him to our list if we don't already have him
+                                System.out.println(myAgent.getName() + " - Found tour guide: " + resultAgent);
+                                if (!tourGuides.contains(resultAgent))
+                                    tourGuides.add(resultAgent);
+                                break;
+                            default:
+                                // We don't care about this service
+                                // (we get all services the agent provides here, even if we don't care about them)
+                                break;
+                        }
+
+                        srvcIterator.remove();
+                    }
+                }
+
+            }
+            catch (FIPAException fe)
+            {
+                fe.printStackTrace();
+            }
+        }
+    }
+
     //endregion
 
-    private void getAvailableTourGuides()
+    private void prepareAndIssueTourRequest()
+    {
+        // Clear the reply data store from the last iteration
+        this.tourReplyDataStore.clear();
+
+        // Verify that we have tour guides and curator. If not, try to find them. If none found, abort.
+
+        if (tourGuides.size() == 0)
+        {
+            getTourGuides();
+            if (tourGuides.size() == 0)
+            {
+                System.out.println(this.getName() + ": No known tour guides. Aborting...");
+                return;
+            }
+        }
+
+        if (curatorAgent == null)
+        {
+            getCurator();
+            if (curatorAgent == null)
+            {
+                System.out.println(this.getName() + ": No known curator. Aborting...");
+                return;
+            }
+        }
+
+        // Request tours
+        this.addBehaviour(new TourRequestSequentialBehaviour(this));
+    }
+
+    private void getTourGuides()
     {
         ArrayList<AID> foundTourGuides = new ArrayList<>();
 
@@ -471,10 +576,10 @@ public class ProfilerAgent extends Agent
                 "age='" + age + '\'' +
                 ", occupation='" + occupation + '\'' +
                 ", interests='" + interests + '\'' +
-                ", visitedItems=" + visitedItems +
                 ", dfTourGuideServiceTemplate=" + dfTourGuideServiceTemplate +
                 ", tourGuides=" + tourGuides +
                 ", tourReplyDataStore=" + tourReplyDataStore +
+                ", dfCuratorServiceTemplate=" + dfCuratorServiceTemplate +
                 ", curatorAgent=" + curatorAgent +
                 '}';
     }

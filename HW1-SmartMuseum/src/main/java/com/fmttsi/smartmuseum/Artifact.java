@@ -1,5 +1,8 @@
 import java.io.Serializable;
 
+/**
+ * Class representing an artifact.
+ * */
 public class Artifact implements Serializable
 {
     private int id;
