@@ -107,11 +107,17 @@ public class ProfilerAgent extends Agent
         {
             // Clear the reply data store from the last iteration
             ((ProfilerAgent)myAgent).tourReplyDataStore.clear();
-            // Update available tour guide list
-            getAvailableTourGuides();
+            // Update available tour guide list and curator
+            getTourGuides();
+            getCurator();
             if (tourGuides.size() == 0)
             {
                 System.out.println(myAgent.getName() + ": No known tour guides. Aborting...");
+                return;
+            }
+            if (curatorAgent == null)
+            {
+                System.out.println(myAgent.getName() + ": No known curator. Aborting...");
                 return;
             }
             // Request tours
@@ -326,9 +332,10 @@ public class ProfilerAgent extends Agent
             {
                 case 0:
 
-                    // Start by finding the curator, if we cannot find we break from the loop
-                    if(!getCurator())
+                    if (curatorAgent == null)
                     {
+                        System.out.println(myAgent.getName()
+                                + " - No known curator agent. Aborting get artifact details");
                         step = 2;
                         break;
                     }
@@ -429,7 +436,7 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
-    private void getAvailableTourGuides()
+    private void getTourGuides()
     {
         ArrayList<AID> foundTourGuides = new ArrayList<>();
 
