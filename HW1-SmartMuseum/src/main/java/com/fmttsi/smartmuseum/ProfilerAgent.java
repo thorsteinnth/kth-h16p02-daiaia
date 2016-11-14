@@ -82,7 +82,10 @@ public class ProfilerAgent extends Agent
                 DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfCuratorServiceTemplate, null);
         this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, curatorSubscriptionMessage));
 
-        // Let's request tours every 10 seconds
+        // Let's request the first tour in 5 seconds
+        // (adding a Waker behaviour here just to try it out)
+        this.addBehaviour(new TourRequestWaker(this, 5000));
+        // Let's request tours every 10 seconds, starting 10 seconds from now.
         this.addBehaviour(new TourRequestTicker(this, 10000));
 
         System.out.println("ProfilerAgent " + getAID().getName() + " is ready: " + this.toString());
@@ -98,6 +101,21 @@ public class ProfilerAgent extends Agent
 
     //region Behaviours
 
+    private class TourRequestWaker extends WakerBehaviour
+    {
+        public TourRequestWaker(ProfilerAgent agent, long timeout)
+        {
+            super(agent, timeout);
+        }
+
+        @Override
+        protected void onWake()
+        {
+            super.onWake();
+            prepareAndIssueTourRequest();
+        }
+    }
+
     private class TourRequestTicker extends TickerBehaviour
     {
         public TourRequestTicker(ProfilerAgent agent, long timeout)
@@ -105,35 +123,10 @@ public class ProfilerAgent extends Agent
             super(agent, timeout);
         }
 
-        public void onTick()
+        @Override
+        protected void onTick()
         {
-            // Clear the reply data store from the last iteration
-            ((ProfilerAgent)myAgent).tourReplyDataStore.clear();
-
-            // Verify that we have tour guides and curator. If not, try to find them. If none found, abort.
-
-            if (tourGuides.size() == 0)
-            {
-                getTourGuides();
-                if (tourGuides.size() == 0)
-                {
-                    System.out.println(myAgent.getName() + ": No known tour guides. Aborting...");
-                    return;
-                }
-            }
-
-            if (curatorAgent == null)
-            {
-                getCurator();
-                if (curatorAgent == null)
-                {
-                    System.out.println(myAgent.getName() + ": No known curator. Aborting...");
-                    return;
-                }
-            }
-
-            // Request tours
-            myAgent.addBehaviour(new TourRequestSequentialBehaviour((ProfilerAgent)myAgent));
+            prepareAndIssueTourRequest();
         }
     }
 
@@ -475,6 +468,37 @@ public class ProfilerAgent extends Agent
     }
 
     //endregion
+
+    private void prepareAndIssueTourRequest()
+    {
+        // Clear the reply data store from the last iteration
+        this.tourReplyDataStore.clear();
+
+        // Verify that we have tour guides and curator. If not, try to find them. If none found, abort.
+
+        if (tourGuides.size() == 0)
+        {
+            getTourGuides();
+            if (tourGuides.size() == 0)
+            {
+                System.out.println(this.getName() + ": No known tour guides. Aborting...");
+                return;
+            }
+        }
+
+        if (curatorAgent == null)
+        {
+            getCurator();
+            if (curatorAgent == null)
+            {
+                System.out.println(this.getName() + ": No known curator. Aborting...");
+                return;
+            }
+        }
+
+        // Request tours
+        this.addBehaviour(new TourRequestSequentialBehaviour(this));
+    }
 
     private void getTourGuides()
     {
