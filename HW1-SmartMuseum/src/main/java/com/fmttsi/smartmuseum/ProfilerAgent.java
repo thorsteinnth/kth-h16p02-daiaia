@@ -28,11 +28,13 @@ public class ProfilerAgent extends Agent
      * A space separated string of interests, e.g. "paintings sculptures buildings"
      */
     private String interests;
-
     private DFAgentDescription dfTourGuideServiceTemplate;
     private ArrayList<AID> tourGuides;
+    /**
+     * Contains all tour offer replies we have received from tour guides.
+     * Gets reset in the beginning of each "request-tour-process" (iteration)
+     */
     private DataStore tourReplyDataStore;
-
     private DFAgentDescription dfCuratorServiceTemplate;
     private AID curatorAgent;
 
@@ -40,6 +42,7 @@ public class ProfilerAgent extends Agent
 
     protected void setup()
     {
+        // Get command line arguments
         Object[] args = getArguments();
         if (args != null && args.length == 3)
         {
@@ -60,7 +63,7 @@ public class ProfilerAgent extends Agent
         this.tourGuides = new ArrayList<>();
         this.tourReplyDataStore = new DataStore();
 
-        // Create the DF tour-guide template
+        // Create the DF tour-guide service template
         this.dfTourGuideServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType(AppConstants.SRVC_TOUR_GUIDE_VIRTUAL_TOUR_GUIDE_TYPE);
@@ -71,7 +74,7 @@ public class ProfilerAgent extends Agent
                 DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfTourGuideServiceTemplate, null);
         this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, tourGuideSubscriptionMessage));
 
-        // Create the DF template to find the curator agent
+        // Create the DF service template to find the curator agent
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription curatorSD = new ServiceDescription();
         curatorSD.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACT_DETAILS_TYPE);
@@ -101,6 +104,9 @@ public class ProfilerAgent extends Agent
 
     //region Behaviours
 
+    /**
+     * Start the tour request process after a set amount of time
+     */
     private class TourRequestWaker extends WakerBehaviour
     {
         public TourRequestWaker(ProfilerAgent agent, long timeout)
@@ -116,6 +122,9 @@ public class ProfilerAgent extends Agent
         }
     }
 
+    /**
+     * Start the tour request process at set intervals
+     */
     private class TourRequestTicker extends TickerBehaviour
     {
         public TourRequestTicker(ProfilerAgent agent, long timeout)
@@ -130,6 +139,9 @@ public class ProfilerAgent extends Agent
         }
     }
 
+    /**
+     * Run the entire tour request process
+     */
     private class TourRequestSequentialBehaviour extends SequentialBehaviour
     {
         public TourRequestSequentialBehaviour(ProfilerAgent agent)
@@ -144,6 +156,9 @@ public class ProfilerAgent extends Agent
 
     //region Request tour offers behaviours
 
+    /**
+     * Request tour offers (in parallel) from all known tour guides
+     */
     private class RequestTourOffersParallelBehaviour extends ParallelBehaviour
     {
         public RequestTourOffersParallelBehaviour(ProfilerAgent agent)
@@ -151,7 +166,7 @@ public class ProfilerAgent extends Agent
             // Set owner agent and terminate when all children are done
             super(agent, WHEN_ALL);
 
-            // Request tours from all tour guides
+            // Request tours from all known tour guides
             for (AID tourGuide : tourGuides)
             {
                 this.addSubBehaviour(new RequestTourOfferFromTourGuideBehaviour(agent, tourGuide));
@@ -159,6 +174,9 @@ public class ProfilerAgent extends Agent
         }
     }
 
+    /**
+     * Request a tour offer from a certain tour guide
+     */
     private class RequestTourOfferFromTourGuideBehaviour extends OneShotBehaviour
     {
         private AID tourGuide;
@@ -175,6 +193,7 @@ public class ProfilerAgent extends Agent
 
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
             cfp.addReceiver(this.tourGuide);
+            // Let the tour guide know what we are interested in
             cfp.setContent(interests);
             cfp.setConversationId("tour-offer-request");
             myAgent.send(cfp);
@@ -185,6 +204,9 @@ public class ProfilerAgent extends Agent
 
     //region Receive tour offers behaviours
 
+    /**
+     * Receive tour offers (in parallel) from all known tour guides
+     */
     private class ReceiveTourOffersParallelBehaviour extends ParallelBehaviour
     {
         public ReceiveTourOffersParallelBehaviour(ProfilerAgent agent)
@@ -200,7 +222,9 @@ public class ProfilerAgent extends Agent
         }
     }
 
-
+    /**
+     * Receive a tour offer from a certain tour guide
+     */
     private class ReceiveTourOfferFromTourGuideBehaviour extends MsgReceiver
     {
         public ReceiveTourOfferFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
@@ -210,6 +234,9 @@ public class ProfilerAgent extends Agent
             // to the given message template and timeout.
             // If the timeout expires before any message arrives,
             // the behaviour terminates and put null into the datastore.
+
+            // We receive the tour-offer-request reply message from the tour guide, and put it into
+            // the tourReplyDataStore
 
             super(agent,
                     MessageTemplate.and(
@@ -227,6 +254,10 @@ public class ProfilerAgent extends Agent
 
     //region Get best tour behaviours
 
+    /**
+     * Select the best tour offer from the set of received tour offers,
+     * and send an accept message for it to the tour guide that sent it
+     */
     private class SelectBestTourOfferAndAcceptItBehaviour extends OneShotBehaviour
     {
         public SelectBestTourOfferAndAcceptItBehaviour(ProfilerAgent agent)
@@ -236,6 +267,7 @@ public class ProfilerAgent extends Agent
 
         public void action()
         {
+            // Select the best tour offer
             ACLMessage bestOffer = selectBestTourOffer();
 
             if (bestOffer == null)
@@ -244,6 +276,7 @@ public class ProfilerAgent extends Agent
                 return;
             }
 
+            // Send an accept message to the tour guide that sent the best tour offer
             ACLMessage acceptMessage = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
             acceptMessage.addReceiver(bestOffer.getSender());
             acceptMessage.setContent(interests);
@@ -252,6 +285,12 @@ public class ProfilerAgent extends Agent
         }
     }
 
+    /**
+     * Receive a tour from some tour guide.
+     * The tour is a list of ArtifactHeaders.
+     * Once the tour has been received, request details on the artifacts in the tour
+     * from the curator.
+     */
     private class ReceiveTourBehaviour extends MsgReceiver
     {
         public ReceiveTourBehaviour(ProfilerAgent agent)
@@ -275,6 +314,8 @@ public class ProfilerAgent extends Agent
         @Override
         protected void handleMessage(ACLMessage msg)
         {
+            // Handle incoming tour messages
+
             super.handleMessage(msg);
 
             if (msg.getPerformative() == ACLMessage.INFORM)
@@ -313,6 +354,9 @@ public class ProfilerAgent extends Agent
         }
     }
 
+    /**
+     * Get details for the artifacts in a tour
+     */
     private class GetArtifactDetails extends Behaviour
     {
         private ArrayList<ArtifactHeader> artifacts;
@@ -322,6 +366,10 @@ public class ProfilerAgent extends Agent
         private int receivedResponseCount;
         private MessageTemplate mt;
 
+        /**
+         * Constructor
+         * @param artifacts A list of artifacts that we want details for
+         */
         public GetArtifactDetails(ArrayList<ArtifactHeader> artifacts)
         {
             this.artifacts = artifacts;
@@ -336,6 +384,8 @@ public class ProfilerAgent extends Agent
             switch (step)
             {
                 case 0:
+
+                    // Request details on the given artifacts from the curator
 
                     if (curatorAgent == null)
                     {
@@ -387,6 +437,8 @@ public class ProfilerAgent extends Agent
 
                         if (this.receivedResponseCount >= this.sentRequestCount)
                         {
+                            // We have received a response for all sent messages
+
                             this.step = 2;
 
                             // Print artifacts with details
@@ -412,6 +464,9 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
+    /**
+     * Handle subscription notifications from DF
+     */
     private class DFSubscriptionHandlerBehaviour extends SubscriptionInitiator
     {
         public DFSubscriptionHandlerBehaviour(Agent agent, ACLMessage msg)
@@ -430,11 +485,13 @@ public class ProfilerAgent extends Agent
                     AID resultAgent = result[i].getName();
                     jade.util.leap.Iterator srvcIterator = result[i].getAllServices();
 
+                    // Iterate through the services that this agent provides
                     while (srvcIterator.hasNext())
                     {
                         ServiceDescription srvcDescription = (ServiceDescription)srvcIterator.next();
 
                         // Check what kind of agent this is (what services he provides)
+                        // Only take into account the services that we are interested in, ignore others
 
                         switch (srvcDescription.getName())
                         {
@@ -469,6 +526,9 @@ public class ProfilerAgent extends Agent
 
     //endregion
 
+    /**
+     * Prepare and start the tour request process
+     */
     private void prepareAndIssueTourRequest()
     {
         // Clear the reply data store from the last iteration
@@ -500,6 +560,9 @@ public class ProfilerAgent extends Agent
         this.addBehaviour(new TourRequestSequentialBehaviour(this));
     }
 
+    /**
+     * Search the DF for tour guides
+     */
     private void getTourGuides()
     {
         ArrayList<AID> foundTourGuides = new ArrayList<>();
@@ -522,13 +585,17 @@ public class ProfilerAgent extends Agent
         }
     }
 
+    /**
+     * Search the DF for a curator
+     * @return true if a curator was found, false otherwise
+     */
     private boolean getCurator()
     {
         try
         {
             DFAgentDescription[] result = DFService.search(this, this.dfCuratorServiceTemplate);
 
-            if(result.length > 0)
+            if (result.length > 0)
             {
                 System.out.println(getLocalName() + ": Found curator agent:");
                 this.curatorAgent = result[0].getName();
@@ -549,8 +616,15 @@ public class ProfilerAgent extends Agent
         return false;
     }
 
+    /**
+     * Select the best tour offer out of the ones we have received
+     * @return The best tour offer
+     */
     private ACLMessage selectBestTourOffer()
     {
+        // A tour offer contains only items that are interesting to the user.
+        // Select the tour offer with the largest number of items.
+
         int maxNumberOfInterestingObjects = 0;
         ACLMessage bestOffer = null;
 
