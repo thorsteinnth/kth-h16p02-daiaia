@@ -10,6 +10,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.proto.SubscriptionInitiator;
 
 import java.util.*;
 
@@ -35,14 +36,18 @@ public class TourGuideAgent extends Agent
 
         registerTourGuideService();
 
-        //Create the DF template to find the curator agent
+        // Create the DF template to find the curator agent
         this.dfCuratorServiceTemplate = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType(AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_TYPE);
         sd.setName(AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_NAME);
         this.dfCuratorServiceTemplate.addServices(sd);
+        // Sign up for notifications from DF for when agents that match our description registers
+        ACLMessage curatorSubscriptionMessage =
+                DFService.createSubscriptionMessage(this, getDefaultDF(), this.dfCuratorServiceTemplate, null);
+        this.addBehaviour(new DFSubscriptionHandlerBehaviour(this, curatorSubscriptionMessage));
 
-        //add behavior to listen to virtual-tour requests from profiler agent
+        // Add behavior to listen to virtual-tour requests from profiler agent
         addBehaviour(new VirtualTourServer());
 
         System.out.println("TourGuideAgent " + getAID().getName() + " is ready with specialities: " + specialities);
@@ -130,7 +135,7 @@ public class TourGuideAgent extends Agent
                     MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL));
             ACLMessage msg = myAgent.receive(mt);
 
-            if(msg != null)
+            if (msg != null)
             {
                 System.out.println(msg.getSender().getLocalName()
                         + " wants to get information on artifacts for " + msg.getContent());
@@ -274,11 +279,15 @@ public class TourGuideAgent extends Agent
             {
                 case 0:
 
-                    // Start by finding the curator agent (there should only be one)
-                    if(!getCurator())
+                    // Verify that we have a curator. If not, search for him. If not found, abort
+                    if (curatorAgent == null)
                     {
-                        step = 2;
-                        break;
+                        getCurator();
+                        if (curatorAgent == null)
+                        {
+                            step = 2;
+                            break;
+                        }
                     }
 
                     // Send request to curator agent to get list of artifacts for given interests
@@ -343,8 +352,58 @@ public class TourGuideAgent extends Agent
         }
     }
 
+    private class DFSubscriptionHandlerBehaviour extends SubscriptionInitiator
+    {
+        public DFSubscriptionHandlerBehaviour(Agent agent, ACLMessage msg)
+        {
+            super(agent, msg);
+        }
+
+        @Override
+        protected void handleInform(ACLMessage inform)
+        {
+            try
+            {
+                DFAgentDescription[] result = DFService.decodeNotification(inform.getContent());
+                for (int i = 0; i < result.length; ++i)
+                {
+                    AID resultAgent = result[i].getName();
+                    jade.util.leap.Iterator srvcIterator = result[i].getAllServices();
+
+                    while (srvcIterator.hasNext())
+                    {
+                        ServiceDescription srvcDescription = (ServiceDescription)srvcIterator.next();
+
+                        // Check what kind of agent this is (what services he provides)
+
+                        switch (srvcDescription.getName())
+                        {
+                            case AppConstants.SRVC_CURATOR_GET_ARTIFACTS_FOR_INTEREST_NAME:
+                                // This is a curator, let's save him
+                                System.out.println(myAgent.getName() + " - Found curator: " + resultAgent);
+                                curatorAgent = resultAgent;
+                                break;
+                            default:
+                                // We don't care about this service
+                                // (we get all services the agent provides here, even if we don't care about them)
+                                break;
+                        }
+
+                        srvcIterator.remove();
+                    }
+                }
+
+            }
+            catch (FIPAException fe)
+            {
+                fe.printStackTrace();
+            }
+        }
+    }
+
     /**
-     * @return a reference to the CuratorAgent, found in the yellow pages
+     * Search for a CuratorAgent in the yellow pages.
+     * @return true if a CuratorAgent was found, false otherwise.
      */
     private boolean getCurator()
     {
