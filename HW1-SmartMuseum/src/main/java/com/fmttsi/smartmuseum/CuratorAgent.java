@@ -12,7 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// CuratorAgent monitors the gallery/museum
+/**
+ * CuratorAgent: monitors the gallery/museum.
+ * Provides two services: get-artifacts-for-interest and get-artifact-details.
+ */
 public class CuratorAgent extends Agent
 {
     private ArrayList<Artifact> artifacts;
@@ -35,7 +38,9 @@ public class CuratorAgent extends Agent
         System.out.println("CuratorAgent " + getAID().getName() + " terminating.");
     }
 
-    // Registers the curator services in the yellow pages
+    /**
+     * Registers the two curator services in the yellow pages
+     */
     private void RegisterCuratorServices()
     {
         // Artifacts for interest
@@ -63,7 +68,9 @@ public class CuratorAgent extends Agent
         }
     }
 
-    // Deregister the curator service from the yellow pages
+    /**
+     * Deregister the two curator service from the yellow pages
+     */
     private void DeregisterCuratorService()
     {
         try
@@ -78,6 +85,9 @@ public class CuratorAgent extends Agent
 
     //region Behaviours
 
+    /**
+     * CyclicBehaviour, provides the get-artifacts-for-interest service
+     */
     private class ArtifactsForInterestServer extends CyclicBehaviour
     {
         public void action()
@@ -119,6 +129,9 @@ public class CuratorAgent extends Agent
         }
     }
 
+    /**
+     * CyclicBehaviour, provides the get-artifact-details service
+     */
     private class ArtifactDetailsServer extends CyclicBehaviour
     {
         public void action()
@@ -160,6 +173,11 @@ public class CuratorAgent extends Agent
 
     //endregion
 
+    /**
+     * @param id of the artifact
+     * @return Artifact
+     * @throws ArtifactNotFoundException
+     */
     private Artifact getArtifactById(int id) throws ArtifactNotFoundException
     {
         List<Artifact> foundArtifacts =
@@ -176,6 +194,10 @@ public class CuratorAgent extends Agent
             return foundArtifacts.get(0);
     }
 
+    /**
+     * @param interests
+     * @return ArrayList of Artifacts
+     */
     private ArrayList<Artifact> getArtifactsForInterests(String interests)
     {
         // Interests string is separated with spaces
@@ -193,6 +215,10 @@ public class CuratorAgent extends Agent
         return foundArtifacts;
     }
 
+    /**
+     * @param interests
+     * @return ArrayList of ArtifactType
+     */
     private ArrayList<Artifact.ArtifactType> mapInterestToArtifactTypes(String[] interests)
     {
         ArrayList<Artifact.ArtifactType> artifactTypes = new ArrayList<>();
@@ -229,6 +255,9 @@ public class CuratorAgent extends Agent
         return artifactTypes;
     }
 
+    /**
+     * @return ArrayList of Artifacts
+     */
     private ArrayList<Artifact> generateArtifacts()
     {
         ArrayList<Artifact> artifacts = new ArrayList<>();
