@@ -13,6 +13,9 @@ import jade.lang.acl.MessageTemplate;
 
 import java.util.*;
 
+/**
+ * Tour Guide Agent: Registers a
+ */
 public class TourGuideAgent extends Agent
 {
     /**

@@ -181,6 +181,7 @@ public class ProfilerAgent extends Agent
         }
     }
 
+
     private class ReceiveTourOfferFromTourGuideBehaviour extends MsgReceiver
     {
         public ReceiveTourOfferFromTourGuideBehaviour(ProfilerAgent agent, AID tourGuide)
