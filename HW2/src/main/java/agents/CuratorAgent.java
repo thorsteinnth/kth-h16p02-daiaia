@@ -1,5 +1,8 @@
 package agents;
 
-public class CuratorAgent
+import jade.core.Agent;
+
+public class CuratorAgent extends Agent
 {
+
 }
