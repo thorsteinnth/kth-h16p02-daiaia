@@ -10,9 +10,13 @@ import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+import jade.proto.ContractNetInitiator;
 
 import java.util.ArrayList;
+import java.util.Vector;
 
 public class ArtistManagerAgent extends Agent
 {
@@ -77,9 +81,54 @@ public class ArtistManagerAgent extends Agent
         @Override
         protected void onTick()
         {
-            myAgent.addBehaviour(new AuctionSequentialBehaviour((ArtistManagerAgent)myAgent));
+            getBidders();
+
+            if (bidders.size() == 0)
+            {
+                System.out.println(myAgent.getName()
+                        + " - AuctionSequentialBehaviour - there are no bidders, aborting");
+                return;
+            }
+
+            // Prepare request
+            ACLMessage request = new ACLMessage(ACLMessage.CFP);
+            request.setConversationId("auction");
+            request.setContent("this is the content :)");
+            request.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
+            for (AID bidder : bidders)
+                request.addReceiver(bidder);
+
+            myAgent.addBehaviour(
+                    new ContractNetInitiator(myAgent, request)
+                    {
+                        @Override
+                        protected void handlePropose(ACLMessage propose, Vector acceptances)
+                        {
+                            super.handlePropose(propose, acceptances);
+                            System.out.println("Received proposal: " + propose);
+                            System.out.println("Acceptances: " + propose);
+
+                            // TODO Figure out when we have received all proposals and move on to
+                            // next step in protocol
+                        }
+
+                        @Override
+                        protected void handleRefuse(ACLMessage refuse)
+                        {
+                            super.handleRefuse(refuse);
+                        }
+
+                        @Override
+                        protected void handleInform(ACLMessage inform)
+                        {
+                            super.handleInform(inform);
+                        }
+                    }
+            );
         }
     }
+
+    /* Normal (non-FIPA) implementation
 
     private class AuctionSequentialBehaviour extends SequentialBehaviour
     {
@@ -134,6 +183,8 @@ public class ArtistManagerAgent extends Agent
             myAgent.send(cfp);
         }
     }
+
+    */
 
     //endregion
 }

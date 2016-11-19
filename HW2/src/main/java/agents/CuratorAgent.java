@@ -3,11 +3,12 @@ package agents;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAAgentManagement.*;
 import jade.domain.FIPAException;
+import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.proto.ContractNetResponder;
 
 public class CuratorAgent extends Agent
 {
@@ -15,7 +16,15 @@ public class CuratorAgent extends Agent
     {
         registerCuratorServices();
 
-        this.addBehaviour(new BidServer());
+        this.addBehaviour(
+                new BidRequestResponder(
+                        this,
+                        MessageTemplate.and(
+                                MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION),
+                                MessageTemplate.MatchConversationId("auction")
+                        )
+                )
+        );
 
         System.out.println("CuratorAgent " + getAID().getName() + " is ready.");
     }
@@ -60,6 +69,28 @@ public class CuratorAgent extends Agent
 
     //region Behaviours
 
+    private class BidRequestResponder extends ContractNetResponder
+    {
+        public BidRequestResponder(Agent agent, MessageTemplate mt)
+        {
+            super(agent, mt);
+        }
+
+        @Override
+        protected ACLMessage handleCfp(ACLMessage cfp) throws RefuseException, FailureException, NotUnderstoodException
+        {
+            String content = cfp.getContent();
+            System.out.println("Received content in responder: " + content);
+
+            ACLMessage reply = cfp.createReply();
+            reply.setPerformative(ACLMessage.PROPOSE);
+            reply.setContent("100");
+
+            return reply;
+        }
+    }
+
+    /* Old, non-fipa implementation
     private class BidServer extends CyclicBehaviour
     {
         public void action()
@@ -91,6 +122,7 @@ public class CuratorAgent extends Agent
             }
         }
     }
+    */
 
     //endregion
 }
