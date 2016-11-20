@@ -2,11 +2,11 @@ package artifacts;
 
 public class Painting
 {
+    private String name;
+    private String artist;
+    private int centuryPainted;
     private SubjectMatter subjectMatter;
     private PaintingMedium medium;
-    private String artist;
-    private String name;
-    private int centuryPainted;
     private int marketValue;
 
     public enum SubjectMatter
@@ -71,11 +71,11 @@ public class Painting
     public String toString()
     {
         return "Painting{" +
-                "subjectMatter=" + subjectMatter +
-                ", medium=" + medium +
+                "name='" + name + '\'' +
                 ", artist='" + artist + '\'' +
-                ", name='" + name + '\'' +
                 ", centuryPainted=" + centuryPainted +
+                ", subjectMatter=" + subjectMatter +
+                ", medium=" + medium +
                 ", marketValue=" + marketValue +
                 '}';
     }

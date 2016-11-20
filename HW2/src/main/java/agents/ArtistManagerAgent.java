@@ -14,6 +14,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Vector;
 
 public class ArtistManagerAgent extends Agent
@@ -88,6 +89,10 @@ public class ArtistManagerAgent extends Agent
                 return;
             }
 
+            // Get a painting to auction off
+            Painting painting = getRandomPainting();
+            System.out.println(myAgent.getName() + " - Auctioning off painting: " + painting);
+
             // Inform all known bidders the start of auction
             addBehaviour(new OneShotBehaviour()
             {
@@ -96,7 +101,7 @@ public class ArtistManagerAgent extends Agent
                 {
                     ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
                     inform.setContent("start-of-auction");
-                    inform.setConversationId("auction"); //TODO auction + artifact name
+                    inform.setConversationId("auction-" + painting.getName());
                     for (AID bidder : bidders)
                         inform.addReceiver(bidder);
 
@@ -106,8 +111,8 @@ public class ArtistManagerAgent extends Agent
 
             // Prepare request
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-            cfp.setConversationId("auction");
-            cfp.setContent("100");
+            cfp.setConversationId("auction-" + painting.getName());
+            cfp.setContent(String.valueOf(painting.getMarketValue()));  // TODO Select price I want to sell it for (higher than market value)
             cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
             for (AID bidder : bidders)
                 cfp.addReceiver(bidder);
@@ -261,6 +266,13 @@ public class ArtistManagerAgent extends Agent
     }
 
     //endregion
+
+    private Painting getRandomPainting()
+    {
+        ArrayList<Painting> paintings = generatePaintings();
+        Painting selectedPainting = paintings.get(new Random().nextInt(paintings.size()));
+        return selectedPainting;
+    }
 
     private ArrayList<Painting> generatePaintings()
     {

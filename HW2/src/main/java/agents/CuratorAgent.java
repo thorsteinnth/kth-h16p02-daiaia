@@ -11,6 +11,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetResponder;
 
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class CuratorAgent extends Agent
 {
@@ -108,13 +109,26 @@ public class CuratorAgent extends Agent
         @Override
         protected ACLMessage handleCfp(ACLMessage cfp) throws RefuseException, FailureException, NotUnderstoodException
         {
-            String content = cfp.getContent();
-            System.out.println("Received content in responder: " + content);
+            // TODO We should send the painting details over here too
+            // and decide how much we are willing to pay, and maybe refuse also
+            String askingPrice = cfp.getContent();
+            System.out.println("Received asking price: " + askingPrice);
 
             ACLMessage reply = cfp.createReply();
-            reply.setPerformative(ACLMessage.PROPOSE);
-            int randomBidAmount = new Random().nextInt(200);
-            reply.setContent(String.valueOf(randomBidAmount));
+
+            try
+            {
+                int iAskingPrice = Integer.parseInt(askingPrice);
+                reply.setPerformative(ACLMessage.PROPOSE);
+                int randomBidAmount = ThreadLocalRandom.current().nextInt(iAskingPrice, iAskingPrice*2+1);
+                reply.setContent(String.valueOf(randomBidAmount));
+            }
+            catch (NumberFormatException ex)
+            {
+                System.err.println(ex);
+                reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+                reply.setContent("not understood");
+            }
 
             return reply;
         }
