@@ -2,10 +2,7 @@ package agents;
 
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.ParallelBehaviour;
-import jade.core.behaviours.SequentialBehaviour;
-import jade.core.behaviours.TickerBehaviour;
+import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -34,7 +31,7 @@ public class ArtistManagerAgent extends Agent
         sd.setName(ServiceList.SRVC_CURATOR_BIDDER_NAME);
         this.bidderServiceTemplate.addServices(sd);
 
-        this.addBehaviour(new RunAuctionTicker(this, 5000));
+        this.addBehaviour(new RunAuctionWaker(this, 5000));
 
         System.out.println("ArtistManagerAgent " + getAID().getName() + " is ready.");
     }
@@ -71,15 +68,15 @@ public class ArtistManagerAgent extends Agent
 
     //region Behaviours
 
-    private class RunAuctionTicker extends TickerBehaviour
+    private class RunAuctionWaker extends WakerBehaviour
     {
-        public RunAuctionTicker(ArtistManagerAgent agent, long timeout)
+        public RunAuctionWaker(ArtistManagerAgent agent, long timeout)
         {
             super(agent, timeout);
         }
 
         @Override
-        protected void onTick()
+        protected void onWake()
         {
             getBidders();
 
@@ -91,40 +88,45 @@ public class ArtistManagerAgent extends Agent
             }
 
             // Prepare request
-            ACLMessage request = new ACLMessage(ACLMessage.CFP);
-            request.setConversationId("auction");
-            request.setContent("this is the content :)");
-            request.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
+            ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+            cfp.setConversationId("auction");
+            cfp.setContent("this is the content :)");
+            cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
             for (AID bidder : bidders)
-                request.addReceiver(bidder);
+                cfp.addReceiver(bidder);
 
-            myAgent.addBehaviour(
-                    new ContractNetInitiator(myAgent, request)
-                    {
-                        @Override
-                        protected void handlePropose(ACLMessage propose, Vector acceptances)
-                        {
-                            super.handlePropose(propose, acceptances);
-                            System.out.println("Received proposal: " + propose);
-                            System.out.println("Acceptances: " + propose);
+            myAgent.addBehaviour(new DutchAuctionInitiator(myAgent, cfp));
+        }
+    }
 
-                            // TODO Figure out when we have received all proposals and move on to
-                            // next step in protocol
-                        }
+    private class DutchAuctionInitiator extends ContractNetInitiator
+    {
+        public DutchAuctionInitiator(Agent a, ACLMessage cfp)
+        {
+            super(a, cfp);
+        }
 
-                        @Override
-                        protected void handleRefuse(ACLMessage refuse)
-                        {
-                            super.handleRefuse(refuse);
-                        }
+        @Override
+        protected void handlePropose(ACLMessage propose, Vector acceptances)
+        {
+            super.handlePropose(propose, acceptances);
+            System.out.println("Received proposal: " + propose);
+            System.out.println("Acceptances: " + propose);
 
-                        @Override
-                        protected void handleInform(ACLMessage inform)
-                        {
-                            super.handleInform(inform);
-                        }
-                    }
-            );
+            // TODO Figure out when we have received all proposals and move on to
+            // next step in protocol
+        }
+
+        @Override
+        protected void handleRefuse(ACLMessage refuse)
+        {
+            super.handleRefuse(refuse);
+        }
+
+        @Override
+        protected void handleInform(ACLMessage inform)
+        {
+            super.handleInform(inform);
         }
     }
 
