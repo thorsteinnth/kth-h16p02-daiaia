@@ -1,5 +1,6 @@
 package agents;
 
+import artifacts.Painting;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
@@ -223,6 +224,7 @@ public class ArtistManagerAgent extends Agent
                     try
                     {
                         int bidAmount = Integer.parseInt(bid.getContent());
+
                         System.out.println(myAgent.getName()
                                 + " - Received bid from " + bid.getSender().getName()
                                 + " for " + bidAmount
@@ -242,7 +244,7 @@ public class ArtistManagerAgent extends Agent
         }
     }
 
-    /* Normal (non-FIPA) implementation
+    /* Normal (non-FIPA) implementation, not in use
 
     private class AuctionSequentialBehaviour extends SequentialBehaviour
     {
@@ -301,4 +303,21 @@ public class ArtistManagerAgent extends Agent
     */
 
     //endregion
+
+    private ArrayList<Painting> generatePaintings()
+    {
+        ArrayList<Painting> paintings = new ArrayList<>();
+
+        paintings.add(new Painting("Mona Lisa", "Leonardo da Vinci", 15, Painting.SubjectMatter.Portrait, Painting.PaintingMedium.Oil));
+        paintings.add(new Painting("The Scream", "Edvard Munch", 18, Painting.SubjectMatter.Abstract, Painting.PaintingMedium.Pastel));
+        paintings.add(new Painting("The Persistence of Memory", "Salvador Dalí", 19, Painting.SubjectMatter.Abstract, Painting.PaintingMedium.Oil));
+        paintings.add(new Painting("Wanderer above the Sea of Fog", "Caspar David Friedrich", 18, Painting.SubjectMatter.Landscape, Painting.PaintingMedium.Oil));
+        paintings.add(new Painting("The Starry Night", "Vincent van Gogh", 18, Painting.SubjectMatter.Abstract, Painting.PaintingMedium.Oil));
+        paintings.add(new Painting("Bouquet", "Jan Brueghel the Elder", 15, Painting.SubjectMatter.StillLife, Painting.PaintingMedium.Oil));
+        paintings.add(new Painting("The Creation of Adam", "Michelangelo", 15, Painting.SubjectMatter.Religious, Painting.PaintingMedium.Fresco));
+        paintings.add(new Painting("Jedburgh Abbey from the River", "Thomas Girtin", 17, Painting.SubjectMatter.Landscape, Painting.PaintingMedium.Watercolor));
+        paintings.add(new Painting("A Bigger Splash", "David Hockney", 19, Painting.SubjectMatter.Landscape, Painting.PaintingMedium.Acrylic));
+
+        return paintings;
+    }
 }
