@@ -96,6 +96,7 @@ public class ArtistManagerAgent extends Agent
                 {
                     ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
                     inform.setContent("start-of-auction");
+                    inform.setConversationId("auction"); //TODO auction + artifact name
                     for (AID bidder : bidders)
                         inform.addReceiver(bidder);
 
