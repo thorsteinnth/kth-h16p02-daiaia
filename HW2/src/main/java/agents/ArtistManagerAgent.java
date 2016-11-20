@@ -110,25 +110,39 @@ public class ArtistManagerAgent extends Agent
                 }
             });
 
-            // Prepare request
-            ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-            cfp.setConversationId("auction-" + painting.getName());
-            BidRequestDTO dto = new BidRequestDTO(painting, getInitialAskingPrice(painting));
+            // Send request
+
             try
             {
-                cfp.setContentObject(dto);
+                ACLMessage cfp = getNextAuctionCFPMessage(painting, getInitialAskingPrice(painting));
+                myAgent.addBehaviour(new DutchAuctionInitiator(myAgent, cfp));
             }
             catch (IOException ex)
             {
                 System.err.println(ex);
                 return;
             }
-            cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
-            for (AID bidder : bidders)
-                cfp.addReceiver(bidder);
-
-            myAgent.addBehaviour(new DutchAuctionInitiator(myAgent, cfp));
         }
+    }
+
+    private ACLMessage getNextAuctionCFPMessage(Painting painting, int askingPrice) throws IOException
+    {
+        ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+        cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
+        cfp.setConversationId("auction-" + painting.getName());
+
+        BidRequestDTO dto = new BidRequestDTO(painting, askingPrice);
+        cfp.setContentObject(dto);
+
+        for (AID bidder : bidders)
+            cfp.addReceiver(bidder);
+
+        return cfp;
+    }
+
+    private int lowerAskingPrice(int currentAskingPrice)
+    {
+        return  (int)(currentAskingPrice * 0.9);
     }
 
     private class DutchAuctionInitiator extends ContractNetInitiator
@@ -196,7 +210,6 @@ public class ArtistManagerAgent extends Agent
                     acceptances.add(reply);
                 }
             }
-
         }
 
         @Override
@@ -284,8 +297,7 @@ public class ArtistManagerAgent extends Agent
 
     private int getReservePrice(Painting painting)
     {
-        // TODO This price should probably be higher than market value
-        return painting.getMarketValue();
+        return (int)(painting.getMarketValue() * 1.1);
     }
 
     private Painting getRandomPainting()
