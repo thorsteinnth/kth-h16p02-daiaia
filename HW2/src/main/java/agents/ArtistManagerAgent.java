@@ -88,6 +88,23 @@ public class ArtistManagerAgent extends Agent
                 return;
             }
 
+            // Inform all known bidders the start of auction
+            // TODO : can me make this a part of the protocol?
+            addBehaviour(new OneShotBehaviour()
+            {
+                @Override
+                public void action()
+                {
+                    ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+                    inform.setContent("start-of-auction");
+                    inform.setConversationId("auction"); //TODO auction + artifact name
+                    for (AID bidder : bidders)
+                        inform.addReceiver(bidder);
+
+                    this.myAgent.send(inform);
+                }
+            });
+
             // Prepare request
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
             cfp.setConversationId("auction");

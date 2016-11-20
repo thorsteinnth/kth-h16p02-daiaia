@@ -17,17 +17,7 @@ public class CuratorAgent extends Agent
     protected void setup()
     {
         registerCuratorServices();
-
-        this.addBehaviour(
-                new BidRequestResponder(
-                        this,
-                        MessageTemplate.and(
-                                MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION),
-                                MessageTemplate.MatchConversationId("auction")
-                        )
-                )
-        );
-
+        addBehaviour(new WaitForAuction());
         System.out.println("CuratorAgent " + getAID().getName() + " is ready.");
     }
 
@@ -70,6 +60,43 @@ public class CuratorAgent extends Agent
     }
 
     //region Behaviours
+
+    /**
+     * A Cycle behaviour that waits for a "start-of-auction" INFORM message, picks up the conversation id and
+     * adds a BidRequestResponderBehaviour
+     */
+    private class WaitForAuction extends CyclicBehaviour
+    {
+        public void action()
+        {
+            MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+            ACLMessage msg = this.myAgent.receive(mt);
+
+            if(msg != null)
+            {
+                String content = msg.getContent();
+
+                if(content.equals("start-of-auction"))
+                {
+                    String conversationId = msg.getConversationId();
+
+                    addBehaviour(
+                            new BidRequestResponder(
+                                    myAgent,
+                                    MessageTemplate.and(
+                                            MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION),
+                                            MessageTemplate.MatchConversationId(conversationId)
+                                    )
+                            )
+                    );
+                }
+            }
+            else
+            {
+                block();
+            }
+        }
+    }
 
     private class BidRequestResponder extends ContractNetResponder
     {
