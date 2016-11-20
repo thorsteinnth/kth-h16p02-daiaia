@@ -114,7 +114,7 @@ public class ArtistManagerAgent extends Agent
 
             try
             {
-                ACLMessage cfp = getNextAuctionCFPMessage(painting, getInitialAskingPrice(painting));
+                ACLMessage cfp = getAuctionCFPMessage(painting, getInitialAskingPrice(painting));
                 myAgent.addBehaviour(new DutchAuctionInitiator(myAgent, cfp));
             }
             catch (IOException ex)
@@ -125,7 +125,7 @@ public class ArtistManagerAgent extends Agent
         }
     }
 
-    private ACLMessage getNextAuctionCFPMessage(Painting painting, int askingPrice) throws IOException
+    private ACLMessage getAuctionCFPMessage(Painting painting, int askingPrice) throws IOException
     {
         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
         cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
