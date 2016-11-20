@@ -136,39 +136,5 @@ public class CuratorAgent extends Agent
         }
     }
 
-    /* Old, non-fipa implementation
-    private class BidServer extends CyclicBehaviour
-    {
-        public void action()
-        {
-            MessageTemplate mt = MessageTemplate.and(
-                    MessageTemplate.MatchPerformative(ACLMessage.CFP),
-                    MessageTemplate.MatchConversationId("request-bid")
-            );
-
-            ACLMessage msg = myAgent.receive(mt);
-
-            if (msg != null)
-            {
-                // Request for bid received, handle it
-
-                ACLMessage reply = msg.createReply();
-
-                String content = msg.getContent();
-                System.out.println("Received content: " + content);
-
-                reply.setPerformative(ACLMessage.PROPOSE);
-                reply.setContent("100");
-
-                myAgent.send(reply);
-            }
-            else
-            {
-                block();
-            }
-        }
-    }
-    */
-
     //endregion
 }

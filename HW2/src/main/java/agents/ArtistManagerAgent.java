@@ -261,64 +261,6 @@ public class ArtistManagerAgent extends Agent
         }
     }
 
-    /* Normal (non-FIPA) implementation, not in use
-
-    private class AuctionSequentialBehaviour extends SequentialBehaviour
-    {
-        public AuctionSequentialBehaviour(ArtistManagerAgent agent)
-        {
-            super(agent);
-
-            getBidders();
-            if (bidders.size() == 0)
-            {
-                System.out.println(myAgent.getName()
-                        + " - AuctionSequentialBehaviour - there are no bidders, aborting");
-                return;
-            }
-
-            this.addSubBehaviour(new RequestBidsParallelBehaviour(agent));
-        }
-    }
-
-    private class RequestBidsParallelBehaviour extends ParallelBehaviour
-    {
-        public RequestBidsParallelBehaviour(ArtistManagerAgent agent)
-        {
-            // Set owner agent and terminate when all children are done
-            super(agent, WHEN_ALL);
-
-            for (AID bidder : bidders)
-            {
-                this.addSubBehaviour(new RequestBidFromBidder(agent, bidder));
-            }
-        }
-    }
-
-    private class RequestBidFromBidder extends OneShotBehaviour
-    {
-        private AID bidder;
-
-        public RequestBidFromBidder(ArtistManagerAgent agent, AID bidder)
-        {
-            super(agent);
-            this.bidder = bidder;
-        }
-
-        public void action()
-        {
-            System.out.println("Requesting bid from bidder: " + this.bidder.getName());
-
-            ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-            cfp.addReceiver(this.bidder);
-            cfp.setConversationId("request-bid");
-            cfp.setContent("this is the content :)");
-            myAgent.send(cfp);
-        }
-    }
-
-    */
-
     //endregion
 
     private ArrayList<Painting> generatePaintings()
