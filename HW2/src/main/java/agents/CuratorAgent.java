@@ -218,8 +218,15 @@ public class CuratorAgent extends Agent
                 double paintingInterestFactor = getPaintingInterestFactorForAgent(dto.painting);
                 double amountWillingToPay = dto.painting.getMarketValue() * paintingInterestFactor;
 
+                System.out.println("DEBUG: " + myAgent + " is willing to pay " + amountWillingToPay);
+
                 if((double)dto.askingPrice <= amountWillingToPay)
                 {
+                    System.out.println(myAgent
+                            + " sending proposal for " + dto.painting.getName()
+                            + " for asking price: "
+                            + dto.askingPrice);
+
                     reply.setPerformative(ACLMessage.PROPOSE);
                     reply.setContent(String.valueOf(dto.askingPrice));
                 }
