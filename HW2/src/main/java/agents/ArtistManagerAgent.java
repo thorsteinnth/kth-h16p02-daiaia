@@ -89,7 +89,6 @@ public class ArtistManagerAgent extends Agent
             }
 
             // Inform all known bidders the start of auction
-            // TODO : can me make this a part of the protocol?
             addBehaviour(new OneShotBehaviour()
             {
                 @Override
