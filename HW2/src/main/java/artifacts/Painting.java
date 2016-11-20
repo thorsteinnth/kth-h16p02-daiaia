@@ -1,8 +1,9 @@
 package artifacts;
 
+import java.io.Serializable;
 import java.util.Random;
 
-public class Painting
+public class Painting implements Serializable
 {
     private String name;
     private String artist;

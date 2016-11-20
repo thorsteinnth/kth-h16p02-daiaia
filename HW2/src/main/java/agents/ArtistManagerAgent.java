@@ -1,5 +1,6 @@
 package agents;
 
+import DTOs.BidRequestDTO;
 import artifacts.Painting;
 import jade.core.AID;
 import jade.core.Agent;
@@ -10,12 +11,12 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.Vector;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ArtistManagerAgent extends Agent
 {
@@ -112,7 +113,16 @@ public class ArtistManagerAgent extends Agent
             // Prepare request
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
             cfp.setConversationId("auction-" + painting.getName());
-            cfp.setContent(String.valueOf(painting.getMarketValue()));  // TODO Select price I want to sell it for (higher than market value)
+            BidRequestDTO dto = new BidRequestDTO(painting, getInitialAskingPrice(painting));
+            try
+            {
+                cfp.setContentObject(dto);
+            }
+            catch (IOException ex)
+            {
+                System.err.println(ex);
+                return;
+            }
             cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
             for (AID bidder : bidders)
                 cfp.addReceiver(bidder);
@@ -267,11 +277,21 @@ public class ArtistManagerAgent extends Agent
 
     //endregion
 
+    private int getInitialAskingPrice(Painting painting)
+    {
+        return painting.getMarketValue() * 2;
+    }
+
+    private int getReservePrice(Painting painting)
+    {
+        // TODO This price should probably be higher than market value
+        return painting.getMarketValue();
+    }
+
     private Painting getRandomPainting()
     {
         ArrayList<Painting> paintings = generatePaintings();
-        Painting selectedPainting = paintings.get(new Random().nextInt(paintings.size()));
-        return selectedPainting;
+        return paintings.get(ThreadLocalRandom.current().nextInt(paintings.size()));
     }
 
     private ArrayList<Painting> generatePaintings()
