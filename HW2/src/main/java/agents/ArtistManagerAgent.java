@@ -90,7 +90,7 @@ public class ArtistManagerAgent extends Agent
             // Prepare request
             ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
             cfp.setConversationId("auction");
-            cfp.setContent("this is the content :)");
+            cfp.setContent("100");
             cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
             for (AID bidder : bidders)
                 cfp.addReceiver(bidder);
@@ -115,9 +115,21 @@ public class ArtistManagerAgent extends Agent
         and ignore all the responses and proposals that have not yet been received.
         */
 
+        private int askingPrice;
+
         public DutchAuctionInitiator(Agent a, ACLMessage cfp)
         {
             super(a, cfp);
+
+            try
+            {
+                this.askingPrice = Integer.parseInt(cfp.getContent());
+            }
+            catch (NumberFormatException ex)
+            {
+                this.askingPrice = 0;
+                System.err.println(ex);
+            }
         }
 
         @Override
@@ -131,17 +143,14 @@ public class ArtistManagerAgent extends Agent
 
             System.out.println(myAgent.getName() + " - All responses received");
 
-            for (int i = 0; i < responses.size(); i++)
-            {
-                ACLMessage response = (ACLMessage)responses.elementAt(i);
+            ArrayList<ACLMessage> acceptableBids = getAcceptableBids(responses);
+            // TODO Get highest acceptable bid, with tiebreaking
 
-                if (response.getPerformative() == ACLMessage.PROPOSE)
-                {
-                    System.out.println("Have proposal for " + response.getContent());
-                    ACLMessage reply = response.createReply();
-                    reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                    acceptances.add(reply);
-                }
+            for (ACLMessage acceptableBid : acceptableBids)
+            {
+                ACLMessage reply = acceptableBid.createReply();
+                reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                acceptances.add(reply);
             }
         }
 
@@ -150,6 +159,36 @@ public class ArtistManagerAgent extends Agent
         {
             super.handleInform(inform);
             System.out.println(myAgent.getName() + " - Received INFORM: " + inform);
+        }
+
+        private ArrayList<ACLMessage> getAcceptableBids(Vector<ACLMessage> bids)
+        {
+            // We accept bids that match the asking price
+            // Bids will always be integers
+
+            ArrayList<ACLMessage> acceptableBids = new ArrayList<>();
+
+            for (int i = 0; i < bids.size(); i++)
+            {
+                ACLMessage bid = bids.elementAt(i);
+
+                if (bid.getPerformative() == ACLMessage.PROPOSE)
+                {
+                    try
+                    {
+                        int bidAmount = Integer.parseInt(bid.getContent());
+
+                        if (bidAmount >= this.askingPrice)
+                            acceptableBids.add(bid);
+                    }
+                    catch (NumberFormatException ex)
+                    {
+                        System.err.println(ex);
+                    }
+                }
+            }
+
+            return acceptableBids;
         }
     }
 
