@@ -1,6 +1,7 @@
 package agents;
 
 import DTOs.BidRequestDTO;
+import artifacts.Painting;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
@@ -12,15 +13,19 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetResponder;
 
+import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class CuratorAgent extends Agent
 {
+    private ArrayList<Painting.SubjectMatter> subjectMatterInterests;
+    private ArrayList<Painting.PaintingMedium> paintingMediumInterests;
+
     protected void setup()
     {
         registerCuratorServices();
         addBehaviour(new WaitForAuction());
+        getPaintingInterests();
         System.out.println("CuratorAgent " + getAID().getName() + " is ready.");
     }
 
@@ -59,6 +64,56 @@ public class CuratorAgent extends Agent
         catch (FIPAException fe)
         {
             fe.printStackTrace();
+        }
+    }
+
+    private void getPaintingInterests()
+    {
+        this.subjectMatterInterests = new ArrayList<>();
+        this.paintingMediumInterests = new ArrayList<>();
+        Random random = new Random();
+
+        switch (random.nextInt(8))
+        {
+            case 0:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Portrait);
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Abstract);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Oil);
+                break;
+            case 1:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Landscape);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Oil);
+                break;
+            case 2:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Religious);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Pastel);
+                break;
+            case 3:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Portrait);
+                this.subjectMatterInterests.add(Painting.SubjectMatter.StillLife);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Fresco);
+                break;
+            case 4:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.StillLife);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Pastel);
+                break;
+            case 5:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Abstract);
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Landscape);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Acrylic);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Fresco);
+                break;
+            case 6:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Portrait);
+                this.subjectMatterInterests.add(Painting.SubjectMatter.Religious);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Oil);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Pastel);
+                break;
+            case 7:
+                this.subjectMatterInterests.add(Painting.SubjectMatter.StillLife);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Watercolor);
+                this.paintingMediumInterests.add(Painting.PaintingMedium.Fresco);
+                break;
         }
     }
 
@@ -119,10 +174,14 @@ public class CuratorAgent extends Agent
                 System.out.println(myAgent.getName()
                         + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice);
 
-                // TODO Decide how much we are willing to pay, and maybe refuse also
-                reply.setPerformative(ACLMessage.PROPOSE);
-                int randomBidAmount = ThreadLocalRandom.current().nextInt(dto.askingPrice, dto.askingPrice*2+1);
-                reply.setContent(String.valueOf(randomBidAmount));
+                int paintingInterestFactor = getPaintingInterestFactorForAgent(dto.painting);
+                int bidAmount = dto.painting.getMarketValue() * paintingInterestFactor;
+
+                if(dto.askingPrice <= bidAmount)
+                {
+                    reply.setPerformative(ACLMessage.PROPOSE);
+                    reply.setContent(String.valueOf(dto.askingPrice));
+                }
             }
             catch (UnreadableException|NumberFormatException ex)
             {
@@ -148,6 +207,19 @@ public class CuratorAgent extends Agent
         protected void handleRejectProposal(ACLMessage cfp, ACLMessage propose, ACLMessage reject)
         {
             System.out.println(myAgent.getName() + " - Received reject proposal: " + reject);
+        }
+
+        private int getPaintingInterestFactorForAgent(Painting painting)
+        {
+            int interestFactor = 1;
+
+            if(subjectMatterInterests.contains(painting.getSubjectMatter()))
+                interestFactor += 0.2;
+
+            if(paintingMediumInterests.contains(painting.getMedium()))
+                interestFactor += 0.2;
+
+            return interestFactor;
         }
     }
 

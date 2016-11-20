@@ -1,6 +1,7 @@
 package artifacts;
 
 import java.io.Serializable;
+import java.util.Random;
 
 public class Painting implements Serializable
 {
