@@ -1,5 +1,6 @@
 package agents;
 
+import DTOs.BidRequestDTO;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
@@ -8,6 +9,7 @@ import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetResponder;
 
 import java.util.Random;
@@ -109,21 +111,20 @@ public class CuratorAgent extends Agent
         @Override
         protected ACLMessage handleCfp(ACLMessage cfp) throws RefuseException, FailureException, NotUnderstoodException
         {
-            // TODO We should send the painting details over here too
-            // and decide how much we are willing to pay, and maybe refuse also
-            String askingPrice = cfp.getContent();
-            System.out.println("Received asking price: " + askingPrice);
-
             ACLMessage reply = cfp.createReply();
 
             try
             {
-                int iAskingPrice = Integer.parseInt(askingPrice);
+                BidRequestDTO dto = (BidRequestDTO) cfp.getContentObject();
+                System.out.println(myAgent.getName()
+                        + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice);
+
+                // TODO Decide how much we are willing to pay, and maybe refuse also
                 reply.setPerformative(ACLMessage.PROPOSE);
-                int randomBidAmount = ThreadLocalRandom.current().nextInt(iAskingPrice, iAskingPrice*2+1);
+                int randomBidAmount = ThreadLocalRandom.current().nextInt(dto.askingPrice, dto.askingPrice*2+1);
                 reply.setContent(String.valueOf(randomBidAmount));
             }
-            catch (NumberFormatException ex)
+            catch (UnreadableException|NumberFormatException ex)
             {
                 System.err.println(ex);
                 reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);

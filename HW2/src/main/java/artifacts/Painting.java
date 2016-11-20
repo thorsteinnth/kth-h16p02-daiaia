@@ -1,6 +1,8 @@
 package artifacts;
 
-public class Painting
+import java.io.Serializable;
+
+public class Painting implements Serializable
 {
     private String name;
     private String artist;
