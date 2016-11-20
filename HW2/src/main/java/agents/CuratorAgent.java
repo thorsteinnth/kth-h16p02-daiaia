@@ -62,8 +62,8 @@ public class CuratorAgent extends Agent
     //region Behaviours
 
     /**
-     * A Cycle behaviour that waits for a "start-of-auction" INFORM message, picks up the conversation id and
-     * adds a BidRequestResponderBehaviour
+     * A Cycle behaviour that waits for a "start-of-auction" INFORM message, picks up the conversation id
+     * for the auction and then adds a BidRequestResponderBehaviour to participate in the auction
      */
     private class WaitForAuction extends CyclicBehaviour
     {
