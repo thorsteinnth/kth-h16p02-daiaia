@@ -35,7 +35,7 @@ public class ArtistManagerAgent extends Agent
         sd.setName(ServiceList.SRVC_CURATOR_BIDDER_NAME);
         this.bidderServiceTemplate.addServices(sd);
 
-        this.addBehaviour(new AuctionManagerWaker(this, 5000));
+        this.addBehaviour(new AuctionManagementWaker(this, 5000));
 
         System.out.println("ArtistManagerAgent " + getAID().getName() + " is ready.");
     }
@@ -72,9 +72,9 @@ public class ArtistManagerAgent extends Agent
 
     //region Behaviours
 
-    private class AuctionManagerWaker extends WakerBehaviour
+    private class AuctionManagementWaker extends WakerBehaviour
     {
-        public AuctionManagerWaker(ArtistManagerAgent agent, long timeout)
+        public AuctionManagementWaker(ArtistManagerAgent agent, long timeout)
         {
             super(agent, timeout);
         }
@@ -83,96 +83,74 @@ public class ArtistManagerAgent extends Agent
         protected void onWake()
         {
             System.out.println(myAgent.getName() + " - Starting auction");
-            myAgent.addBehaviour(new AuctionManagerBehaviour(myAgent));
+            myAgent.addBehaviour(new AuctionManagementBehaviour(myAgent));
         }
     }
 
-    /**
-     * Manage the auction process. Run iterative rounds until auction finishes.
-     * */
-    private class AuctionManagerBehaviour extends Behaviour
+    private class AuctionManagementBehaviour extends SequentialBehaviour
     {
-        private int step;
-        private Painting painting;
-
-        public AuctionManagerBehaviour(Agent agent)
+        public AuctionManagementBehaviour(Agent agent)
         {
             super(agent);
 
-            this.step = 0;
+            // Update bidder list
+            getBidders();
+            if (bidders.size() == 0)
+            {
+                System.out.println(myAgent.getName()
+                        + " - AuctionManagementBehaviour - there are no bidders, aborting");
 
-            // Get a painting to auction off
-            this.painting = getRandomPainting();
+                // Abort auction
+                return;
+            }
+
+            // Get painting to auction off
+            Painting painting = getRandomPainting();
             System.out.println(myAgent.getName() + " - Auctioning off painting: " + painting);
+
+            // Inform bidders that there is an auction starting
+            this.addSubBehaviour(new InformBiddersOfStartOfAuctionBehaviour(myAgent, painting));
+
+            // Start the auction
+            try
+            {
+                ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+                cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
+                cfp.setConversationId("auction-" + painting.getName());
+                BidRequestDTO dto = new BidRequestDTO(painting, getInitialAskingPrice(painting));
+                cfp.setContentObject(dto);
+                for (AID bidder : bidders)
+                    cfp.addReceiver(bidder);
+
+                this.addSubBehaviour(new DutchAuctionInitiator(myAgent, cfp));
+            }
+            catch (IOException ex)
+            {
+                System.err.println(ex);
+            }
+        }
+    }
+
+    private class InformBiddersOfStartOfAuctionBehaviour extends OneShotBehaviour
+    {
+        private Painting painting;
+
+        public InformBiddersOfStartOfAuctionBehaviour(Agent agent, Painting painting)
+        {
+            super(agent);
+            this.painting = painting;
         }
 
         @Override
         public void action()
         {
-            switch (this.step)
-            {
-                case 0:
-                    // Update bidder list
-                    getBidders();
-                    if (bidders.size() == 0)
-                    {
-                        System.out.println(myAgent.getName()
-                                + " - AuctionSequentialBehaviour - there are no bidders, aborting");
+            ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+            inform.setContent("start-of-auction");
+            inform.setConversationId("auction-" + painting.getName());
+            for (AID bidder : bidders)
+                inform.addReceiver(bidder);
 
-                        // We are done, abort by jumping to last step
-                        this.step = 3;
-                    }
-                    this.step++;
-                    break;
-
-                case 1:
-                    // Inform all known bidders the start of auction
-                    System.out.println(myAgent.getName() + " - Informing all known bidders of start of auction");
-                    myAgent.addBehaviour(new OneShotBehaviour()
-                    {
-                        @Override
-                        public void action()
-                        {
-                            ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
-                            inform.setContent("start-of-auction");
-                            inform.setConversationId("auction-" + painting.getName());
-                            for (AID bidder : bidders)
-                                inform.addReceiver(bidder);
-
-                            myAgent.send(inform);
-                        }
-                    });
-                    this.step++;
-                    break;
-
-                case 2:
-                    // Start auction
-                    try
-                    {
-                        ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-                        cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
-                        cfp.setConversationId("auction-" + this.painting.getName());
-                        BidRequestDTO dto = new BidRequestDTO(this.painting, getInitialAskingPrice(this.painting));
-                        cfp.setContentObject(dto);
-                        for (AID bidder : bidders)
-                            cfp.addReceiver(bidder);
-
-                        myAgent.addBehaviour(new DutchAuctionInitiator(myAgent, cfp));
-                    }
-                    catch (IOException ex)
-                    {
-                        System.err.println(ex);
-                    }
-
-                    this.step++;
-                    break;
-            }
-        }
-
-        @Override
-        public boolean done()
-        {
-            return this.step == 3;
+            myAgent.send(inform);
         }
     }
 
