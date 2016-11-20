@@ -1,5 +1,7 @@
 package artifacts;
 
+import java.util.Random;
+
 public class Painting
 {
     private String name;
