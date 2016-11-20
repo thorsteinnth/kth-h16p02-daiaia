@@ -18,11 +18,42 @@ import java.util.Random;
 
 public class CuratorAgent extends Agent
 {
+    private enum BiddingStrategy
+    {
+        PASSIVE,
+        AGGRESSIVE
+    }
+
     private ArrayList<Painting.SubjectMatter> subjectMatterInterests;
     private ArrayList<Painting.PaintingMedium> paintingMediumInterests;
+    private BiddingStrategy biddingStrategy;
 
     protected void setup()
     {
+        // Get command line arguments
+        Object[] args = getArguments();
+        if (args != null && args.length == 1)
+        {
+            String biddingStrategy = (String)args[0];
+
+            if(biddingStrategy.equals("passive"))
+            {
+                this.biddingStrategy = BiddingStrategy.PASSIVE;
+            }
+            else if(biddingStrategy.equals("aggressive"))
+            {
+                this.biddingStrategy = BiddingStrategy.AGGRESSIVE;
+            }
+            else
+            {
+                invalidCommandLineArguments();
+            }
+        }
+        else
+        {
+            invalidCommandLineArguments();
+        }
+
         registerCuratorServices();
         addBehaviour(new WaitForAuction());
         getPaintingInterests();
@@ -33,6 +64,16 @@ public class CuratorAgent extends Agent
     {
         deregisterCuratorServices();
         System.out.println("CuratorAgent " + getAID().getName() + " terminating.");
+    }
+
+    private void invalidCommandLineArguments()
+    {
+        System.out.println("CuratorAgent: Need command line arguments on the form (biddingStrategy) " +
+                "where bidding strategy can be either passive or aggressive " +
+                "Example: (aggressive)");
+
+        // Terminate agent
+        doDelete();
     }
 
     private void registerCuratorServices()
@@ -174,11 +215,18 @@ public class CuratorAgent extends Agent
                 System.out.println(myAgent.getName()
                         + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice);
 
-                int paintingInterestFactor = getPaintingInterestFactorForAgent(dto.painting);
-                int bidAmount = dto.painting.getMarketValue() * paintingInterestFactor;
+                double paintingInterestFactor = getPaintingInterestFactorForAgent(dto.painting);
+                double amountWillingToPay = dto.painting.getMarketValue() * paintingInterestFactor;
 
-                if(dto.askingPrice <= bidAmount)
+                System.out.println("DEBUG: " + myAgent + " is willing to pay " + amountWillingToPay);
+
+                if((double)dto.askingPrice <= amountWillingToPay)
                 {
+                    System.out.println(myAgent
+                            + " sending proposal for " + dto.painting.getName()
+                            + " for asking price: "
+                            + dto.askingPrice);
+
                     reply.setPerformative(ACLMessage.PROPOSE);
                     reply.setContent(String.valueOf(dto.askingPrice));
                 }
@@ -209,15 +257,30 @@ public class CuratorAgent extends Agent
             System.out.println(myAgent.getName() + " - Received reject proposal: " + reject);
         }
 
-        private int getPaintingInterestFactorForAgent(Painting painting)
+        private double getPaintingInterestFactorForAgent(Painting painting)
         {
-            int interestFactor = 1;
+            double strategyFactor = 0;
+
+            if(biddingStrategy.equals(BiddingStrategy.PASSIVE))
+            {
+                strategyFactor = 0.2;
+            }
+            else if(biddingStrategy.equals(BiddingStrategy.AGGRESSIVE))
+            {
+                strategyFactor = 0.25;
+            }
+
+            double interestFactor = 1;
 
             if(subjectMatterInterests.contains(painting.getSubjectMatter()))
-                interestFactor += 0.2;
+            {
+                interestFactor += strategyFactor;
+            }
 
             if(paintingMediumInterests.contains(painting.getMedium()))
-                interestFactor += 0.2;
+            {
+                interestFactor += strategyFactor;
+            }
 
             return interestFactor;
         }
