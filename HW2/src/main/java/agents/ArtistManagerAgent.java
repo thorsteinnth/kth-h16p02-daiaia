@@ -10,12 +10,11 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.Vector;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ArtistManagerAgent extends Agent
 {
@@ -270,8 +269,7 @@ public class ArtistManagerAgent extends Agent
     private Painting getRandomPainting()
     {
         ArrayList<Painting> paintings = generatePaintings();
-        Painting selectedPainting = paintings.get(new Random().nextInt(paintings.size()));
-        return selectedPainting;
+        return paintings.get(ThreadLocalRandom.current().nextInt(paintings.size()));
     }
 
     private ArrayList<Painting> generatePaintings()
