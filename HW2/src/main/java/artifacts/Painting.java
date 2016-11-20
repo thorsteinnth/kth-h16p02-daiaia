@@ -7,6 +7,7 @@ public class Painting
     private String artist;
     private String name;
     private int centuryPainted;
+    private int marketValue;
 
     public enum SubjectMatter
     {
@@ -26,13 +27,14 @@ public class Painting
         Fresco
     }
 
-    public Painting(String name, String artist, int centuryPainted, SubjectMatter subjectMatter, PaintingMedium medium)
+    public Painting(String name, String artist, int centuryPainted, SubjectMatter subjectMatter, PaintingMedium medium, int marketValue)
     {
         this.name = name;
         this.artist = artist;
         this.centuryPainted = centuryPainted;
         this.subjectMatter = subjectMatter;
         this.medium = medium;
+        this.marketValue = marketValue;
     }
 
     public SubjectMatter getSubjectMatter()
@@ -60,15 +62,21 @@ public class Painting
         return centuryPainted;
     }
 
+    public int getMarketValue()
+    {
+        return marketValue;
+    }
+
     @Override
     public String toString()
     {
-        return "artifacts.Painting{" +
+        return "Painting{" +
                 "subjectMatter=" + subjectMatter +
                 ", medium=" + medium +
                 ", artist='" + artist + '\'' +
                 ", name='" + name + '\'' +
                 ", centuryPainted=" + centuryPainted +
+                ", marketValue=" + marketValue +
                 '}';
     }
 }
