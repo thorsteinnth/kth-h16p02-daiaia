@@ -10,6 +10,8 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetResponder;
 
+import java.util.Random;
+
 public class CuratorAgent extends Agent
 {
     protected void setup()
@@ -84,7 +86,8 @@ public class CuratorAgent extends Agent
 
             ACLMessage reply = cfp.createReply();
             reply.setPerformative(ACLMessage.PROPOSE);
-            reply.setContent("100");
+            int randomBidAmount = new Random().nextInt(200);
+            reply.setContent(String.valueOf(randomBidAmount));
 
             return reply;
         }

@@ -143,15 +143,28 @@ public class ArtistManagerAgent extends Agent
 
             System.out.println(myAgent.getName() + " - All responses received");
 
-            ArrayList<ACLMessage> acceptableBids = getAcceptableBids(responses);
-            // TODO Get highest acceptable bid, with tiebreaking
+            ACLMessage winningBid = getHighestAcceptableBid(responses);
 
-            for (ACLMessage acceptableBid : acceptableBids)
+            if (winningBid != null)
             {
-                ACLMessage reply = acceptableBid.createReply();
+                ACLMessage reply = winningBid.createReply();
                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                 acceptances.add(reply);
             }
+
+            // Send reject proposal messages to all other bidders
+            for (int i = 0; i < responses.size(); i++)
+            {
+                ACLMessage response = (ACLMessage)responses.elementAt(i);
+
+                if (!response.equals(winningBid))
+                {
+                    ACLMessage reply = response.createReply();
+                    reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
+                    acceptances.add(reply);
+                }
+            }
+
         }
 
         @Override
@@ -159,6 +172,39 @@ public class ArtistManagerAgent extends Agent
         {
             super.handleInform(inform);
             System.out.println(myAgent.getName() + " - Received INFORM: " + inform);
+        }
+
+        private ACLMessage getHighestAcceptableBid(Vector<ACLMessage> bids)
+        {
+            ArrayList<ACLMessage> acceptableBids = getAcceptableBids(bids);
+
+            int highestBid = 0;
+            ACLMessage highestBidMessage = null;
+
+            for (ACLMessage acceptableBid : acceptableBids)
+            {
+                int bidAmount = Integer.parseInt(acceptableBid.getContent());
+
+                if (bidAmount > highestBid)
+                {
+                    highestBid = bidAmount;
+                    highestBidMessage = acceptableBid;
+                }
+            }
+
+            if (highestBidMessage != null)
+            {
+                System.out.println(myAgent.getName()
+                        + " - Highest acceptable bid (winning bid): "
+                        + highestBidMessage.getContent() + " from " + highestBidMessage.getSender().getName()
+                );
+            }
+            else
+            {
+                System.out.println(myAgent.getName() + " - No highest acceptable bid (winning bid)");
+            }
+
+            return highestBidMessage;
         }
 
         private ArrayList<ACLMessage> getAcceptableBids(Vector<ACLMessage> bids)
@@ -177,6 +223,10 @@ public class ArtistManagerAgent extends Agent
                     try
                     {
                         int bidAmount = Integer.parseInt(bid.getContent());
+                        System.out.println(myAgent.getName()
+                                + " - Received bid from " + bid.getSender().getName()
+                                + " for " + bidAmount
+                        );
 
                         if (bidAmount >= this.askingPrice)
                             acceptableBids.add(bid);
