@@ -88,6 +88,22 @@ public class CuratorAgent extends Agent
 
             return reply;
         }
+
+        @Override
+        protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException
+        {
+            System.out.println(myAgent.getName() + " - Received accept proposal: " + accept);
+            ACLMessage reply = accept.createReply();
+            reply.setPerformative(ACLMessage.INFORM);
+            reply.setContent("Thank you.");
+            return reply;
+        }
+
+        @Override
+        protected void handleRejectProposal(ACLMessage cfp, ACLMessage propose, ACLMessage reject)
+        {
+            System.out.println(myAgent.getName() + " - Received reject proposal: " + reject);
+        }
     }
 
     /* Old, non-fipa implementation

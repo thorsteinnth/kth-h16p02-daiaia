@@ -101,32 +101,55 @@ public class ArtistManagerAgent extends Agent
 
     private class DutchAuctionInitiator extends ContractNetInitiator
     {
+        /*
+        From documentation:
+        The initiator can evaluate all the received proposals and make its choice of which agent proposals
+        will be accepted and which will be rejected. This class provides two ways for this evaluation.
+        It can be done progressively each time a new PROPOSE message is received and a new call to the handlePropose()
+        callback method is executed or, in alternative, it can be done just once when all the PROPOSE messages
+        have been collected (or the reply-by deadline has expired) and a single call to the handleAllResponses()
+        callback method is executed. In both cases, the second parameter of the method,
+        i.e. the Vector acceptances, must be filled with the appropriate ACCEPT/REJECT-PROPOSAL messages.
+        Notice that, for the first case, the method skipNextResponses() has been provided that,
+        if called by the programmer when waiting for PROPOSE messages, allows to skip to the next state
+        and ignore all the responses and proposals that have not yet been received.
+        */
+
         public DutchAuctionInitiator(Agent a, ACLMessage cfp)
         {
             super(a, cfp);
         }
 
         @Override
-        protected void handlePropose(ACLMessage propose, Vector acceptances)
+        protected void handleAllResponses(Vector responses, Vector acceptances)
         {
-            super.handlePropose(propose, acceptances);
-            System.out.println("Received proposal: " + propose);
-            System.out.println("Acceptances: " + propose);
+            // All responses have been received or the reply-by deadline has expired
 
-            // TODO Figure out when we have received all proposals and move on to
-            // next step in protocol
-        }
+            super.handleAllResponses(responses, acceptances);
 
-        @Override
-        protected void handleRefuse(ACLMessage refuse)
-        {
-            super.handleRefuse(refuse);
+            // Fill the acceptances vector with ACCEPT/REJECT-PROPOSAL messages
+
+            System.out.println(myAgent.getName() + " - All responses received");
+
+            for (int i = 0; i < responses.size(); i++)
+            {
+                ACLMessage response = (ACLMessage)responses.elementAt(i);
+
+                if (response.getPerformative() == ACLMessage.PROPOSE)
+                {
+                    System.out.println("Have proposal for " + response.getContent());
+                    ACLMessage reply = response.createReply();
+                    reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                    acceptances.add(reply);
+                }
+            }
         }
 
         @Override
         protected void handleInform(ACLMessage inform)
         {
             super.handleInform(inform);
+            System.out.println(myAgent.getName() + " - Received INFORM: " + inform);
         }
     }
 
