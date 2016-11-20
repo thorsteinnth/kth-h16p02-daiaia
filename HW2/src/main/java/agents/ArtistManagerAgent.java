@@ -146,10 +146,7 @@ public class ArtistManagerAgent extends Agent
                     break;
 
                 case 2:
-
-                    // Send CFP
-                    // TODO Check if the auction is over (i.e. if we have to go through another iteration)
-
+                    // Start auction
                     try
                     {
                         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
@@ -247,11 +244,28 @@ public class ArtistManagerAgent extends Agent
 
                 try
                 {
+                    BidRequestDTO oldDTO = (BidRequestDTO)cfp.getContentObject();
+
+                    // Check if we have already gone as low as we can go
+                    if (oldDTO.askingPrice == getReservePrice(oldDTO.painting))
+                    {
+                        // We have already reached the reserve price with no luck.
+                        // Abort the auction
+                        System.out.println(myAgent.getName() + " - Auction of painting \"" + oldDTO.painting.getName()
+                                + "\" reached the reserve price: " + getReservePrice(oldDTO.painting)
+                                + " - Aborting auction."
+                        );
+                        return;
+                    }
+
                     // Lower the price
-                    BidRequestDTO oldDTO = (BidRequestDTO) cfp.getContentObject();
-                    BidRequestDTO newDTO = new BidRequestDTO(oldDTO.painting, lowerAskingPrice(oldDTO.askingPrice));
+                    BidRequestDTO newDTO = new BidRequestDTO(
+                            oldDTO.painting,
+                            lowerAskingPrice(oldDTO.painting, oldDTO.askingPrice)
+                    );
                     cfp.setContentObject(newDTO);
 
+                    // Set up and start next iteration
                     Vector<ACLMessage> nextIterationMessages = new Vector<>();
                     nextIterationMessages.add(cfp);
                     newIteration(nextIterationMessages);
@@ -360,11 +374,19 @@ public class ArtistManagerAgent extends Agent
         return painting.getMarketValue() * 2;
     }
 
-    private int lowerAskingPrice(int currentAskingPrice)
+    private int lowerAskingPrice(Painting painting, int currentAskingPrice)
     {
-        return  (int)(currentAskingPrice * 0.9);
+        int reservePrice = getReservePrice(painting);
+        int newPrice = (int)(currentAskingPrice * 0.9);
+        if (newPrice < reservePrice)
+            newPrice = reservePrice;
+
+        return newPrice;
     }
 
+    /**
+     * Get the reserve price, the lowest that the auctioneer is willing to go
+     * */
     private int getReservePrice(Painting painting)
     {
         return (int)(painting.getMarketValue() * 1.1);
