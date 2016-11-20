@@ -147,13 +147,14 @@ public class ArtistManagerAgent extends Agent
                 case 2:
 
                     // Send CFP
+                    // TODO Check if the auction is over (i.e. if we have to go through another iteration)
 
                     try
                     {
                         ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                         cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
-                        cfp.setConversationId("auction-" + painting.getName());
-                        BidRequestDTO dto = new BidRequestDTO(painting, getInitialAskingPrice(painting));
+                        cfp.setConversationId("auction-" + this.painting.getName());
+                        BidRequestDTO dto = new BidRequestDTO(this.painting, getInitialAskingPrice(this.painting));
                         cfp.setContentObject(dto);
                         for (AID bidder : bidders)
                             cfp.addReceiver(bidder);
@@ -163,7 +164,6 @@ public class ArtistManagerAgent extends Agent
                     catch (IOException ex)
                     {
                         System.err.println(ex);
-                        return;
                     }
 
                     this.step++;
@@ -221,6 +221,10 @@ public class ArtistManagerAgent extends Agent
             // Fill the acceptances vector with ACCEPT/REJECT-PROPOSAL messages
 
             System.out.println(myAgent.getName() + " - All responses received");
+            for (int i = 0; i < responses.size(); i++)
+            {
+                System.out.println(myAgent.getName() + " - Received response: " + responses.elementAt(i));
+            }
 
             ACLMessage winningBid = getHighestAcceptableBid(responses);
 
@@ -236,13 +240,22 @@ public class ArtistManagerAgent extends Agent
             {
                 ACLMessage response = (ACLMessage)responses.elementAt(i);
 
-                if (!response.equals(winningBid))
+                if (response.getPerformative() == ACLMessage.PROPOSE && !response.equals(winningBid))
                 {
                     ACLMessage reply = response.createReply();
                     reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                     acceptances.add(reply);
                 }
             }
+
+            // TODO ... have to go to next iteration somehow
+            /*if (winningBid == null)
+            {
+                // We do not have a winner, need another iteration with lower price
+                Vector<ACLMessage> nextIterationMessages = new Vector<>();
+                nextIterationMessages.add(lastCfp);
+                newIteration(nextIterationMessages);
+            }*/
         }
 
         @Override

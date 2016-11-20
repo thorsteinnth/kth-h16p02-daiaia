@@ -47,11 +47,13 @@ public class CuratorAgent extends Agent
             else
             {
                 invalidCommandLineArguments();
+                return;
             }
         }
         else
         {
             invalidCommandLineArguments();
+            return;
         }
 
         registerCuratorServices();
@@ -212,23 +214,28 @@ public class CuratorAgent extends Agent
             try
             {
                 BidRequestDTO dto = (BidRequestDTO) cfp.getContentObject();
-                System.out.println(myAgent.getName()
-                        + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice);
 
                 double paintingInterestFactor = getPaintingInterestFactorForAgent(dto.painting);
                 double amountWillingToPay = dto.painting.getMarketValue() * paintingInterestFactor;
 
-                System.out.println("DEBUG: " + myAgent + " is willing to pay " + amountWillingToPay);
+                System.out.println(myAgent.getName()
+                        + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice
+                        + " - Willing to pay: " + amountWillingToPay
+                );
 
-                if((double)dto.askingPrice <= amountWillingToPay)
+                if ((double)dto.askingPrice <= amountWillingToPay)
                 {
-                    System.out.println(myAgent
-                            + " sending proposal for " + dto.painting.getName()
-                            + " for asking price: "
-                            + dto.askingPrice);
-
+                    // I am willing to pay the asking price or higher,
+                    // let's bid the asking price
                     reply.setPerformative(ACLMessage.PROPOSE);
                     reply.setContent(String.valueOf(dto.askingPrice));
+                }
+                else
+                {
+                    // I am not willing to pay the asking price
+                    // Let's refuse the CFP
+                    reply.setPerformative(ACLMessage.REFUSE);
+                    reply.setContent("Asking price too high");
                 }
             }
             catch (UnreadableException|NumberFormatException ex)
