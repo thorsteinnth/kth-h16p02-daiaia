@@ -11,6 +11,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetInitiator;
 
 import java.io.IOException;
@@ -194,21 +195,13 @@ public class ArtistManagerAgent extends Agent
         and ignore all the responses and proposals that have not yet been received.
         */
 
-        private int askingPrice;
+        private ACLMessage cfp;
 
         public DutchAuctionInitiator(Agent a, ACLMessage cfp)
         {
             super(a, cfp);
 
-            try
-            {
-                this.askingPrice = Integer.parseInt(cfp.getContent());
-            }
-            catch (NumberFormatException ex)
-            {
-                this.askingPrice = 0;
-                System.err.println(ex);
-            }
+            this.cfp = cfp;
         }
 
         @Override
@@ -238,7 +231,7 @@ public class ArtistManagerAgent extends Agent
             // Send reject proposal messages to all other bidders
             for (int i = 0; i < responses.size(); i++)
             {
-                ACLMessage response = (ACLMessage)responses.elementAt(i);
+                ACLMessage response = (ACLMessage) responses.elementAt(i);
 
                 if (response.getPerformative() == ACLMessage.PROPOSE && !response.equals(winningBid))
                 {
@@ -248,14 +241,26 @@ public class ArtistManagerAgent extends Agent
                 }
             }
 
-            // TODO ... have to go to next iteration somehow
-            /*if (winningBid == null)
+            if (winningBid == null)
             {
                 // We do not have a winner, need another iteration with lower price
-                Vector<ACLMessage> nextIterationMessages = new Vector<>();
-                nextIterationMessages.add(lastCfp);
-                newIteration(nextIterationMessages);
-            }*/
+
+                try
+                {
+                    // Lower the price
+                    BidRequestDTO oldDTO = (BidRequestDTO) cfp.getContentObject();
+                    BidRequestDTO newDTO = new BidRequestDTO(oldDTO.painting, lowerAskingPrice(oldDTO.askingPrice));
+                    cfp.setContentObject(newDTO);
+
+                    Vector<ACLMessage> nextIterationMessages = new Vector<>();
+                    nextIterationMessages.add(cfp);
+                    newIteration(nextIterationMessages);
+                }
+                catch (IOException|UnreadableException ex)
+                {
+                    System.err.println(ex);
+                }
+            }
         }
 
         @Override
@@ -263,6 +268,20 @@ public class ArtistManagerAgent extends Agent
         {
             super.handleInform(inform);
             System.out.println(myAgent.getName() + " - Received INFORM: " + inform);
+        }
+
+        private int getCurrentAskingPrice()
+        {
+            try
+            {
+                BidRequestDTO dto = (BidRequestDTO)cfp.getContentObject();
+                return dto.askingPrice;
+            }
+            catch (UnreadableException ex)
+            {
+                System.err.println(ex);
+                return 0;
+            }
         }
 
         private ACLMessage getHighestAcceptableBid(Vector<ACLMessage> bids)
@@ -320,7 +339,7 @@ public class ArtistManagerAgent extends Agent
                                 + " for " + bidAmount
                         );
 
-                        if (bidAmount >= this.askingPrice)
+                        if (bidAmount >= getCurrentAskingPrice())
                             acceptableBids.add(bid);
                     }
                     catch (NumberFormatException ex)
