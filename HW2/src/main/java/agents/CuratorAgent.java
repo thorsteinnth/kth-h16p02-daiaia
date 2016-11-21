@@ -59,7 +59,7 @@ public class CuratorAgent extends Agent
         registerCuratorServices();
         addBehaviour(new WaitForAuction());
         getPaintingInterests();
-        System.out.println("CuratorAgent " + getAID().getName() + " is ready.");
+        System.out.println("CuratorAgent " + getAID().getName() + " is ready. Strategy: " + this.biddingStrategy);
     }
 
     protected void takeDown()

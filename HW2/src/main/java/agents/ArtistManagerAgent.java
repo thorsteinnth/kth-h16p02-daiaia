@@ -171,12 +171,14 @@ public class ArtistManagerAgent extends Agent
         */
 
         private ACLMessage cfp;
+        private int roundCount;
 
         public DutchAuctionInitiator(Agent a, ACLMessage cfp)
         {
             super(a, cfp);
 
             this.cfp = cfp;
+            this.roundCount = 0;
         }
 
         @Override
@@ -185,6 +187,8 @@ public class ArtistManagerAgent extends Agent
             // All responses have been received or the reply-by deadline has expired
 
             super.handleAllResponses(responses, acceptances);
+
+            roundCount++;
 
             // Fill the acceptances vector with ACCEPT/REJECT-PROPOSAL messages
 
@@ -205,6 +209,7 @@ public class ArtistManagerAgent extends Agent
             }
 
             // Send reject proposal messages to all other bidders
+            // and remove the bidders that didn't understand from the list of bidders
             for (int i = 0; i < responses.size(); i++)
             {
                 ACLMessage response = (ACLMessage) responses.elementAt(i);
@@ -214,6 +219,12 @@ public class ArtistManagerAgent extends Agent
                     ACLMessage reply = response.createReply();
                     reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                     acceptances.add(reply);
+                }
+                else if (response.getPerformative() == ACLMessage.NOT_UNDERSTOOD)
+                {
+                    // Remove bidder from list of possible bidders
+                    AID bidderThatDidntUnderstand = response.getSender();
+                    bidders.remove(bidderThatDidntUnderstand);
                 }
             }
 
@@ -234,25 +245,44 @@ public class ArtistManagerAgent extends Agent
                                 + "\" reached the reserve price: " + getReservePrice(oldDTO.painting)
                                 + " - Aborting auction."
                         );
+                        System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         return;
                     }
 
-                    // Lower the price
-                    BidRequestDTO newDTO = new BidRequestDTO(
-                            oldDTO.painting,
-                            lowerAskingPrice(oldDTO.painting, oldDTO.askingPrice)
-                    );
-                    cfp.setContentObject(newDTO);
+                    // Start the next iteration, if we have any bidders left
+                    if (bidders.size() > 0)
+                    {
+                        // Lower the price
+                        BidRequestDTO newDTO = new BidRequestDTO(
+                                oldDTO.painting,
+                                lowerAskingPrice(oldDTO.painting, oldDTO.askingPrice)
+                        );
+                        cfp.setContentObject(newDTO);
 
-                    // Set up and start next iteration
-                    Vector<ACLMessage> nextIterationMessages = new Vector<>();
-                    nextIterationMessages.add(cfp);
-                    newIteration(nextIterationMessages);
+                        // Update the bidders list
+                        cfp.clearAllReceiver();
+                        for (AID bidder : bidders)
+                            cfp.addReceiver(bidder);
+
+                        // Set up and start next iteration
+                        Vector<ACLMessage> nextIterationMessages = new Vector<>();
+                        nextIterationMessages.add(cfp);
+                        newIteration(nextIterationMessages);
+                    }
+                    else
+                    {
+                        System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
+                        System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
+                    }
                 }
                 catch (IOException|UnreadableException ex)
                 {
                     System.err.println(ex);
                 }
+            }
+            else
+            {
+                System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
             }
         }
 
