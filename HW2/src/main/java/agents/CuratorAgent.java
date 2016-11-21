@@ -277,7 +277,7 @@ public class CuratorAgent extends Agent
             }
             else if(biddingStrategy.equals(BiddingStrategy.AGGRESSIVE))
             {
-                strategyFactor = 0.25;
+                strategyFactor = 0.4;
             }
 
             double interestFactor = 1;
