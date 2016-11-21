@@ -171,12 +171,14 @@ public class ArtistManagerAgent extends Agent
         */
 
         private ACLMessage cfp;
+        private int roundCount;
 
         public DutchAuctionInitiator(Agent a, ACLMessage cfp)
         {
             super(a, cfp);
 
             this.cfp = cfp;
+            this.roundCount = 0;
         }
 
         @Override
@@ -185,6 +187,8 @@ public class ArtistManagerAgent extends Agent
             // All responses have been received or the reply-by deadline has expired
 
             super.handleAllResponses(responses, acceptances);
+
+            roundCount++;
 
             // Fill the acceptances vector with ACCEPT/REJECT-PROPOSAL messages
 
@@ -241,6 +245,7 @@ public class ArtistManagerAgent extends Agent
                                 + "\" reached the reserve price: " + getReservePrice(oldDTO.painting)
                                 + " - Aborting auction."
                         );
+                        System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         return;
                     }
 
@@ -267,12 +272,17 @@ public class ArtistManagerAgent extends Agent
                     else
                     {
                         System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
+                        System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                     }
                 }
                 catch (IOException|UnreadableException ex)
                 {
                     System.err.println(ex);
                 }
+            }
+            else
+            {
+                System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
             }
         }
 
