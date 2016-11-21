@@ -191,7 +191,8 @@ public class ArtistManagerAgent extends Agent
             System.out.println(myAgent.getName() + " - All responses received");
             for (int i = 0; i < responses.size(); i++)
             {
-                System.out.println(myAgent.getName() + " - Received response: " + responses.elementAt(i));
+                ACLMessage response = (ACLMessage)responses.elementAt(i);
+                System.out.println(myAgent.getName() + " - " + AgentHelper.getAclMessageDisplayString(response));
             }
 
             ACLMessage winningBid = getHighestAcceptableBid(responses);
@@ -259,7 +260,7 @@ public class ArtistManagerAgent extends Agent
         protected void handleInform(ACLMessage inform)
         {
             super.handleInform(inform);
-            System.out.println(myAgent.getName() + " - Received INFORM: " + inform);
+            System.out.println(myAgent.getName() + " - " + AgentHelper.getAclMessageDisplayString(inform));
         }
 
         private int getCurrentAskingPrice()

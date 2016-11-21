@@ -173,13 +173,16 @@ public class CuratorAgent extends Agent
             MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
             ACLMessage msg = this.myAgent.receive(mt);
 
-            if(msg != null)
+            if (msg != null)
             {
                 String content = msg.getContent();
 
-                if(content.equals("start-of-auction"))
+                if (content.equals("start-of-auction"))
                 {
                     String conversationId = msg.getConversationId();
+
+                    System.out.println(myAgent.getName() + " - Received start of auction message with conversation ID: "
+                            + conversationId);
 
                     addBehaviour(
                             new BidRequestResponder(
@@ -251,7 +254,7 @@ public class CuratorAgent extends Agent
         @Override
         protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException
         {
-            System.out.println(myAgent.getName() + " - Received accept proposal: " + accept);
+            System.out.println(myAgent.getName() + " - " + AgentHelper.getAclMessageDisplayString(accept));
             ACLMessage reply = accept.createReply();
             reply.setPerformative(ACLMessage.INFORM);
             reply.setContent("Thank you.");
@@ -261,7 +264,7 @@ public class CuratorAgent extends Agent
         @Override
         protected void handleRejectProposal(ACLMessage cfp, ACLMessage propose, ACLMessage reject)
         {
-            System.out.println(myAgent.getName() + " - Received reject proposal: " + reject);
+            System.out.println(myAgent.getName() + " - " + AgentHelper.getAclMessageDisplayString(reject));
         }
 
         private double getPaintingInterestFactorForAgent(Painting painting)
