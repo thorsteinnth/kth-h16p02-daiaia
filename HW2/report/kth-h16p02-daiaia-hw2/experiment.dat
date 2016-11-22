@@ -1,0 +1,23 @@
+# This is random data only to show you how to use gnuplot
+# It is based on the figure present in 
+# http://www.hpl.hp.com/research/linux/httperf/wisp98/html/doc003.html
+# Columns are:
+# 1 - Rate
+# 2 - Reply rate
+# 3 - Response time
+# 4 - Percentage of erros
+100 100 2 0
+200 200 2 0
+300 300 3 0
+400 399 3 0
+500 497 4 3
+600 594 4 4
+700 672 5 7
+800 778 8 6
+900 792 12 15
+1000 792 35 22
+1100 788 50 28
+1200 781 60 33
+1300 780 60 37
+1400 776 60 40
+1500 772 60 42
