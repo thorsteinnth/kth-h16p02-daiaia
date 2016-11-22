@@ -42,6 +42,10 @@ public class CuratorAgent extends Agent
             {
                 this.biddingStrategy = BiddingStrategy.PASSIVE;
             }
+            else if(biddingStrategy.equals("medium"))
+            {
+                this.biddingStrategy = BiddingStrategy.MEDIUM;
+            }
             else if(biddingStrategy.equals("aggressive"))
             {
                 this.biddingStrategy = BiddingStrategy.AGGRESSIVE;
