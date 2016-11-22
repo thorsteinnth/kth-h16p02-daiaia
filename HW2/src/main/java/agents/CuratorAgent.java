@@ -21,6 +21,7 @@ public class CuratorAgent extends Agent
     private enum BiddingStrategy
     {
         PASSIVE,
+        MEDIUM,
         AGGRESSIVE
     }
 
@@ -218,12 +219,12 @@ public class CuratorAgent extends Agent
             {
                 BidRequestDTO dto = (BidRequestDTO) cfp.getContentObject();
 
-                double paintingInterestFactor = getPaintingInterestFactorForAgent(dto.painting);
-                double amountWillingToPay = dto.painting.getMarketValue() * paintingInterestFactor;
+                double strategyMultiplier = getStrategyMultiplier(dto.painting);
+                double amountWillingToPay = dto.painting.getMarketValue() * strategyMultiplier;
 
                 System.out.println(myAgent.getName()
                         + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice
-                        + " - Willing to pay: " + amountWillingToPay
+                        + " - Willing to pay: " + (int)amountWillingToPay
                 );
 
                 if ((double)dto.askingPrice <= amountWillingToPay)
@@ -258,6 +259,9 @@ public class CuratorAgent extends Agent
             ACLMessage reply = accept.createReply();
             reply.setPerformative(ACLMessage.INFORM);
             reply.setContent("Thank you.");
+
+            System.out.println(myAgent.getName() + " - Won the auction. Strategy: " + biddingStrategy);
+
             return reply;
         }
 
@@ -267,32 +271,33 @@ public class CuratorAgent extends Agent
             System.out.println(myAgent.getName() + " - " + AgentHelper.getAclMessageDisplayString(reject));
         }
 
-        private double getPaintingInterestFactorForAgent(Painting painting)
+        private double getStrategyMultiplier(Painting painting)
         {
-            double strategyFactor = 0;
+            double interestFactor = 1;
+            double interestIncrement = 0.3;
 
-            if(biddingStrategy.equals(BiddingStrategy.PASSIVE))
+            if (subjectMatterInterests.contains(painting.getSubjectMatter()))
             {
-                strategyFactor = 0.2;
+                interestFactor += interestIncrement;
+            }
+
+            if (paintingMediumInterests.contains(painting.getMedium()))
+            {
+                interestFactor += interestIncrement;
+            }
+
+            double strategyFactor = 1;
+
+            if (biddingStrategy.equals(BiddingStrategy.MEDIUM))
+            {
+                strategyFactor = 1.2;
             }
             else if(biddingStrategy.equals(BiddingStrategy.AGGRESSIVE))
             {
-                strategyFactor = 0.4;
+                strategyFactor = 1.4;
             }
 
-            double interestFactor = 1;
-
-            if(subjectMatterInterests.contains(painting.getSubjectMatter()))
-            {
-                interestFactor += strategyFactor;
-            }
-
-            if(paintingMediumInterests.contains(painting.getMedium()))
-            {
-                interestFactor += strategyFactor;
-            }
-
-            return interestFactor;
+            return interestFactor * strategyFactor;
         }
     }
 
