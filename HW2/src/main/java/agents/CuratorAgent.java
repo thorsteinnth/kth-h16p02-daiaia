@@ -27,6 +27,7 @@ public class CuratorAgent extends Agent
 
     private ArrayList<Painting.SubjectMatter> subjectMatterInterests;
     private ArrayList<Painting.PaintingMedium> paintingMediumInterests;
+    private ArrayList<String> artistInterests;
     private BiddingStrategy biddingStrategy;
 
     protected void setup()
@@ -113,10 +114,12 @@ public class CuratorAgent extends Agent
 
     private void getPaintingInterests()
     {
+        // Add subject matter and painting medium interests
+
         this.subjectMatterInterests = new ArrayList<>();
         this.paintingMediumInterests = new ArrayList<>();
-        Random random = new Random();
 
+        Random random = new Random();
         switch (random.nextInt(8))
         {
             case 0:
@@ -159,6 +162,21 @@ public class CuratorAgent extends Agent
                 this.paintingMediumInterests.add(Painting.PaintingMedium.Fresco);
                 break;
         }
+
+        // Add artist interests
+
+        this.artistInterests = new ArrayList<>();
+
+        ArrayList<String> artists = AgentHelper.getAllArtists();
+        String randomArtist;
+
+        // Let's make him interested in up to 2 artists
+        randomArtist = artists.get(random.nextInt(artists.size()));
+        if (!this.artistInterests.contains(randomArtist))
+            this.artistInterests.add(randomArtist);
+        randomArtist = artists.get(random.nextInt(artists.size()));
+        if (!this.artistInterests.contains(randomArtist))
+            this.artistInterests.add(randomArtist);
     }
 
     //region Behaviours
@@ -225,6 +243,7 @@ public class CuratorAgent extends Agent
                 System.out.println(myAgent.getName()
                         + " - Received asking price for painting " + dto.painting.getName() + ": " + dto.askingPrice
                         + " - Willing to pay: " + (int)amountWillingToPay
+                        + " - Strategy multiplier: " + strategyMultiplier
                 );
 
                 if ((double)dto.askingPrice <= amountWillingToPay)
@@ -286,13 +305,22 @@ public class CuratorAgent extends Agent
                 interestFactor += interestIncrement;
             }
 
+            if (artistInterests.contains(painting.getArtist()))
+            {
+                interestFactor += interestIncrement;
+            }
+
             double strategyFactor = 1;
 
-            if (biddingStrategy.equals(BiddingStrategy.MEDIUM))
+            if (biddingStrategy.equals(BiddingStrategy.PASSIVE))
+            {
+                // Do nothing
+            }
+            else if (biddingStrategy.equals(BiddingStrategy.MEDIUM))
             {
                 strategyFactor = 1.2;
             }
-            else if(biddingStrategy.equals(BiddingStrategy.AGGRESSIVE))
+            else if (biddingStrategy.equals(BiddingStrategy.AGGRESSIVE))
             {
                 strategyFactor = 1.4;
             }

@@ -403,24 +403,7 @@ public class ArtistManagerAgent extends Agent
 
     private Painting getRandomPainting()
     {
-        ArrayList<Painting> paintings = generatePaintings();
+        ArrayList<Painting> paintings = AgentHelper.generatePaintings();
         return paintings.get(ThreadLocalRandom.current().nextInt(paintings.size()));
-    }
-
-    private ArrayList<Painting> generatePaintings()
-    {
-        ArrayList<Painting> paintings = new ArrayList<>();
-
-        paintings.add(new Painting("Mona Lisa", "Leonardo da Vinci", 15, Painting.SubjectMatter.Portrait, Painting.PaintingMedium.Oil, 500));
-        paintings.add(new Painting("The Scream", "Edvard Munch", 18, Painting.SubjectMatter.Abstract, Painting.PaintingMedium.Pastel, 400));
-        paintings.add(new Painting("The Persistence of Memory", "Salvador Dalí", 19, Painting.SubjectMatter.Abstract, Painting.PaintingMedium.Oil, 400));
-        paintings.add(new Painting("Wanderer above the Sea of Fog", "Caspar David Friedrich", 18, Painting.SubjectMatter.Landscape, Painting.PaintingMedium.Oil, 400));
-        paintings.add(new Painting("The Starry Night", "Vincent van Gogh", 18, Painting.SubjectMatter.Abstract, Painting.PaintingMedium.Oil, 300));
-        paintings.add(new Painting("Bouquet", "Jan Brueghel the Elder", 15, Painting.SubjectMatter.StillLife, Painting.PaintingMedium.Oil, 200));
-        paintings.add(new Painting("The Creation of Adam", "Michelangelo", 15, Painting.SubjectMatter.Religious, Painting.PaintingMedium.Fresco, 600));
-        paintings.add(new Painting("Jedburgh Abbey from the River", "Thomas Girtin", 17, Painting.SubjectMatter.Landscape, Painting.PaintingMedium.Watercolor, 200));
-        paintings.add(new Painting("A Bigger Splash", "David Hockney", 19, Painting.SubjectMatter.Landscape, Painting.PaintingMedium.Acrylic, 100));
-
-        return paintings;
     }
 }
