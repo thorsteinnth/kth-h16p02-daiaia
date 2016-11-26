@@ -110,9 +110,9 @@ public class QueenAgent extends Agent
     /**
      * Check if a position is safe, i.e. it is not on the same row, column or diagonal as any other queen
      * */
-    private boolean isPointSafe(Point position, ArrayList<Point> filledPositions)
+    private boolean isPointSafe(Point position, ArrayList<Point> queenPositions)
     {
-        for(Point filledPosition : filledPositions)
+        for(Point filledPosition : queenPositions)
         {
             if(position.x == filledPosition.x)
             {
@@ -299,10 +299,9 @@ public class QueenAgent extends Agent
 
             if (msg != null)
             {
-                String requestType = msg.getContent();
-
                 try
                 {
+                    String requestType = msg.getContent();
                     ArrayList<Point> filledPositions = (ArrayList<Point>) msg.getContentObject();
 
                     if (requestType.equals(SET_POSITION_REQUEST))
