@@ -24,7 +24,6 @@ public class QueenAgent extends Agent
      * Total number of queens. Will be arranged on an nxn matrix.
      * */
     private int n;
-
     private Point position;
 
     protected void setup()
@@ -53,7 +52,7 @@ public class QueenAgent extends Agent
 
         registerQueenServices();
 
-        this.position = new Point(0, 0); // Y should be fixed according to id
+        this.position = new Point(0, this.id);
 
         this.addBehaviour(new InitWakerBehaviour(this, 5000));
 
