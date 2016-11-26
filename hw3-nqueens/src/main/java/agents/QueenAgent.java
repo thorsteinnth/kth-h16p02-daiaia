@@ -249,14 +249,20 @@ public class QueenAgent extends Agent
 
                 try
                 {
-                    // TODO : set string constants somewhere
                     ArrayList<Point> filledPositions = (ArrayList<Point>) msg.getContentObject();
+
+                    if (requestType.equals(SET_POSITION_REQUEST))
+                    {
+
+                    }
+                    else if(requestType.equals((CHANGE_POSITION_REQUEST)))
+                    {
+
+                    }
                 }
                 catch (Exception ex)
                 {
                     ex.printStackTrace();
-
-                    // TODO : reply with not understood
                 }
             }
             else
