@@ -3,6 +3,7 @@ package agents;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -13,12 +14,13 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class QueenAgent extends Agent
 {
     private final String SET_POSITION_REQUEST = "set-position";
-    private final String CHANGE_POSITION_REQUEST = "change-position";
 
     private AID predecessor;
     private AID successor;
@@ -72,7 +74,7 @@ public class QueenAgent extends Agent
         deregisterQueenServices();
         System.out.println("QueenAgent " + getAID().getName() + " terminating.");
     }
-    
+
     /**
      * Set the current position
      * */
@@ -80,6 +82,7 @@ public class QueenAgent extends Agent
     {
         this.position = position;
         this.triedPositions.add(position);
+        System.out.println(getName() + " - Set position: " + this.position);
     }
 
     /**
@@ -248,7 +251,7 @@ public class QueenAgent extends Agent
 
     private class InitWakerBehaviour extends WakerBehaviour
     {
-        public InitWakerBehaviour(Agent a, long timeout)
+        public InitWakerBehaviour(QueenAgent a, long timeout)
         {
             super(a, timeout);
         }
@@ -258,8 +261,28 @@ public class QueenAgent extends Agent
         {
             super.onWake();
 
+            QueenAgent thisAgent = (QueenAgent)myAgent;
+
             getPredecessorAndSuccessor();
-            addBehaviour(new QueenServer());
+            thisAgent.addBehaviour(new QueenServer());
+
+            if (thisAgent.id == 0)
+            {
+                // The first queen (ID 0) selects a random position it its row and
+                // sends a SET_POSITION request to its successor
+
+                thisAgent.setPosition(new Point(ThreadLocalRandom.current().nextInt(thisAgent.n), 0));
+                ArrayList<Point> filledPositions = new ArrayList<>();
+                filledPositions.add(thisAgent.position);
+
+                thisAgent.addBehaviour(
+                        new SetPositionRequestSenderOneShotBehaviour(
+                                thisAgent,
+                                thisAgent.successor,
+                                filledPositions
+                                )
+                );
+            }
         }
     }
 
@@ -284,11 +307,7 @@ public class QueenAgent extends Agent
 
                     if (requestType.equals(SET_POSITION_REQUEST))
                     {
-
-                    }
-                    else if(requestType.equals((CHANGE_POSITION_REQUEST)))
-                    {
-
+                        System.out.println("RECEIVED ASDFAFG");
                     }
                 }
                 catch (Exception ex)
@@ -300,6 +319,39 @@ public class QueenAgent extends Agent
             {
                 block();
             }
+        }
+    }
+
+    private class SetPositionRequestSenderOneShotBehaviour extends OneShotBehaviour
+    {
+        private AID recipient;
+        private ArrayList<Point> filledPositions;
+
+        public SetPositionRequestSenderOneShotBehaviour(Agent a, AID recipient, ArrayList<Point> filledPositions)
+        {
+            super(a);
+            this.recipient = recipient;
+            this.filledPositions = filledPositions;
+        }
+
+        @Override
+        public void action()
+        {
+            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+            msg.setConversationId("nqueens");
+            msg.setContent(SET_POSITION_REQUEST);
+            msg.addReceiver(this.recipient);
+
+            try
+            {
+                msg.setContentObject(this.filledPositions);
+            }
+            catch (IOException ex)
+            {
+                System.err.println(ex);
+            }
+
+            myAgent.send(msg);
         }
     }
 
