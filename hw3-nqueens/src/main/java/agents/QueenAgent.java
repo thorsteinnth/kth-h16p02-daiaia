@@ -19,6 +19,9 @@ import java.util.List;
 
 public class QueenAgent extends Agent
 {
+    private final String SET_POSITION_REQUEST = "set-position";
+    private final String CHANGE_POSITION_REQUEST = "change-position";
+
     private AID predecessor;
     private AID successor;
     /**
