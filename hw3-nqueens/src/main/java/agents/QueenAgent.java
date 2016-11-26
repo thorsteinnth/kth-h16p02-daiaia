@@ -306,9 +306,12 @@ public class QueenAgent extends Agent
 
                     if (requestType.equals(SET_POSITION_REQUEST))
                     {
-                        System.out.println(myAgent.getLocalName() + "got a SET_POSITION_REQUEST");
+                        // System.out.println(myAgent.getLocalName() + "got a SET_POSITION_REQUEST");
+
                         QueenAgent thisAgent = (QueenAgent)myAgent;
 
+                        // if our current position is in the filled position list, we know we need to clear that
+                        // position and find another safe position
                         if(filledPositions.contains(position))
                         {
                             // if our current position is in the filled position list, our successor didn't find a
@@ -324,15 +327,15 @@ public class QueenAgent extends Agent
                             // otherwise we add our position to the list of filled positions and
                             // send it to our successor so he can find a position
 
+                            filledPositions.add(position);
+
                             if(id == n-1)
                             {
                                 // TODO : Print solution - matrix
-                                System.out.println("SUCCESS!");
+                                System.out.println("SUCCESS! - Filled positions: " + filledPositions);
                             }
                             else
                             {
-                                filledPositions.add(position);
-
                                 addBehaviour(
                                         new SetPositionRequestSenderOneShotBehaviour(
                                                 thisAgent,
