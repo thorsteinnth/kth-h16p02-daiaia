@@ -9,6 +9,7 @@ import jade.domain.FIPAAgentManagement.Property;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 
+import java.awt.*;
 import java.util.ArrayList;
 
 public class QueenAgent extends Agent
@@ -23,6 +24,8 @@ public class QueenAgent extends Agent
      * Total number of queens. Will be arranged on an nxn matrix.
      * */
     private int n;
+
+    private Point position;
 
     protected void setup()
     {
@@ -50,6 +53,8 @@ public class QueenAgent extends Agent
 
         registerQueenServices();
 
+        this.position = new Point(0, 0); // Y should be fixed according to id
+
         this.addBehaviour(new InitWakerBehaviour(this, 5000));
 
         System.out.println("QueenAgent " + getAID().getName() + " is ready. ID: " + this.id + " n: " + this.n);
@@ -59,6 +64,31 @@ public class QueenAgent extends Agent
     {
         deregisterQueenServices();
         System.out.println("QueenAgent " + getAID().getName() + " terminating.");
+    }
+
+    private boolean safe(Point position, ArrayList<Point> queenPositions)
+    {
+        for(Point queenPosition : queenPositions)
+        {
+            if(position.y == queenPosition.y)
+            {
+                // the queens are in the same column
+                return false;
+            }
+            else
+            {
+                int deltaRow = Math.abs(position.y - queenPosition.y);
+                int deltaColumn = Math.abs(position.x - queenPosition.x);
+
+                if(deltaRow == deltaColumn)
+                {
+                    // the queens are on the same diagonal
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private void registerQueenServices()
