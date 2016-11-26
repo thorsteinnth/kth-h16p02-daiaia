@@ -307,13 +307,13 @@ public class QueenAgent extends Agent
                     if (requestType.equals(SET_POSITION_REQUEST))
                     {
                         System.out.println(myAgent.getLocalName() + "got a SET_POSITION_REQUEST");
-
                         QueenAgent thisAgent = (QueenAgent)myAgent;
 
-                        // if our current position is in the filled position list, we know we need to clear that
-                        // position and find another safe position
                         if(filledPositions.contains(position))
                         {
+                            // if our current position is in the filled position list, our successor didn't find a
+                            // safe position - so we need to remove our position from the filled position and
+                            //find a new one
                             filledPositions.remove(position);
                         }
 
