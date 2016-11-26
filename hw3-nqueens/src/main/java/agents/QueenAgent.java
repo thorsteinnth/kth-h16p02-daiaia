@@ -2,15 +2,20 @@ package agents;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.Property;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 public class QueenAgent extends Agent
 {
@@ -220,6 +225,41 @@ public class QueenAgent extends Agent
             super.onWake();
 
             getPredecessorAndSuccessor();
+            addBehaviour(new QueenServer());
+        }
+    }
+
+    private class QueenServer extends CyclicBehaviour
+    {
+        public void action()
+        {
+            MessageTemplate mt = MessageTemplate.and(
+                    MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
+                    MessageTemplate.MatchConversationId("nqueens")
+            );
+
+            ACLMessage msg = myAgent.receive(mt);
+
+            if (msg != null)
+            {
+                String requestType = msg.getContent();
+
+                try
+                {
+                    // TODO : set string constants somewhere
+                    ArrayList<Point> filledPositions = (ArrayList<Point>) msg.getContentObject();
+                }
+                catch (Exception ex)
+                {
+                    ex.printStackTrace();
+
+                    // TODO : reply with not understood
+                }
+            }
+            else
+            {
+                block();
+            }
         }
     }
 
