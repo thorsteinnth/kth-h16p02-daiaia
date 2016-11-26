@@ -38,13 +38,13 @@ public class QueenAgent extends Agent
             catch (Exception ex)
             {
                 System.err.println(ex);
-                System.out.println(getName() + " - Invalid command line arguments. Should be: [ID] [N]");
+                System.out.println(getName() + " - Invalid command line arguments. Should be: [ID],[N]");
                 return;
             }
         }
         else
         {
-            System.out.println(getName() + " - Invalid command line arguments. Should be: [ID] [N]");
+            System.out.println(getName() + " - Invalid command line arguments. Should be: [ID],[N]");
             return;
         }
 
