@@ -301,12 +301,41 @@ public class QueenAgent extends Agent
             {
                 try
                 {
-                    String requestType = msg.getContent();
+                    String requestType = msg.getOntology();
                     ArrayList<Point> filledPositions = (ArrayList<Point>) msg.getContentObject();
 
                     if (requestType.equals(SET_POSITION_REQUEST))
                     {
-                        System.out.println("RECEIVED ASDFAFG");
+                        System.out.println(myAgent.getLocalName() + "got a SET_POSITION_REQUEST");
+
+                        QueenAgent thisAgent = (QueenAgent)myAgent;
+
+                        if(findSafePosition(filledPositions, triedPositions))
+                        {
+                            // we found a safe position
+                            // lets forward the filled positions to our successor
+                            addBehaviour(
+                                    new SetPositionRequestSenderOneShotBehaviour(
+                                            thisAgent,
+                                            thisAgent.successor,
+                                            filledPositions
+                                    )
+                            );
+                        }
+                        else
+                        {
+                            // we did not find any untried safe position
+                            // send message to predecessor, asking him to update his position
+                            triedPositions.clear();
+
+                            addBehaviour(
+                                    new SetPositionRequestSenderOneShotBehaviour(
+                                            thisAgent,
+                                            thisAgent.predecessor,
+                                            filledPositions
+                                    )
+                            );
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -338,7 +367,7 @@ public class QueenAgent extends Agent
         {
             ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
             msg.setConversationId("nqueens");
-            msg.setContent(SET_POSITION_REQUEST);
+            msg.setOntology(SET_POSITION_REQUEST);
             msg.addReceiver(this.recipient);
 
             try
