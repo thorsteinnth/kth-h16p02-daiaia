@@ -75,23 +75,23 @@ public class QueenAgent extends Agent
         System.out.println("QueenAgent " + getAID().getName() + " terminating.");
     }
 
-    private boolean safe(Point position, ArrayList<Point> queenPositions)
+    private boolean safe(Point position, ArrayList<Point> filledPositions)
     {
-        for(Point queenPosition : queenPositions)
+        for(Point filledPosition : filledPositions)
         {
-            if(position.x == queenPosition.x)
+            if(position.x == filledPosition.x)
             {
-                // the queens are in the same column
+                // this is no a safe position - the queens are in the same column
                 return false;
             }
             else
             {
-                int deltaRow = Math.abs(position.y - queenPosition.y);
-                int deltaColumn = Math.abs(position.x - queenPosition.x);
+                int deltaRow = Math.abs(position.y - filledPosition.y);
+                int deltaColumn = Math.abs(position.x - filledPosition.x);
 
                 if(deltaRow == deltaColumn)
                 {
-                    // the queens are on the same diagonal
+                    // this is not a safe position - the queens are on the same diagonal
                     return false;
                 }
             }
