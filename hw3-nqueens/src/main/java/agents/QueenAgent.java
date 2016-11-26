@@ -71,7 +71,7 @@ public class QueenAgent extends Agent
     {
         for(Point queenPosition : queenPositions)
         {
-            if(position.y == queenPosition.y)
+            if(position.x == queenPosition.x)
             {
                 // the queens are in the same column
                 return false;
