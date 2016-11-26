@@ -10,7 +10,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 
 public class QueenAgent extends Agent
 {
@@ -28,6 +28,7 @@ public class QueenAgent extends Agent
      * */
     private int n;
     private Point position;
+    private ArrayList<Point> triedPositions;
 
     protected void setup()
     {
@@ -55,6 +56,7 @@ public class QueenAgent extends Agent
 
         registerQueenServices();
 
+        this.triedPositions = new ArrayList<>();
         this.position = new Point(0, this.id);
 
         this.addBehaviour(new InitWakerBehaviour(this, 5000));
@@ -72,7 +74,7 @@ public class QueenAgent extends Agent
     {
         for(Point queenPosition : queenPositions)
         {
-            if(position.y == queenPosition.y)
+            if(position.x == queenPosition.x)
             {
                 // the queens are in the same column
                 return false;
@@ -90,6 +92,7 @@ public class QueenAgent extends Agent
             }
         }
 
+        this.triedPositions.add(position);
         return true;
     }
 
