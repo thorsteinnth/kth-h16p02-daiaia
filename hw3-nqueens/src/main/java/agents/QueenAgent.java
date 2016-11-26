@@ -135,6 +135,35 @@ public class QueenAgent extends Agent
         return true;
     }
 
+    private String printChessboard(ArrayList<Point> filledPositions)
+    {
+        StringBuilder sb = new StringBuilder();
+        Point pointToTest = new Point();
+
+        for (int y = 0; y < n; y++)
+        {
+            StringBuilder sbRow = new StringBuilder();
+
+            for (int x = 0; x < n ; x++)
+            {
+                pointToTest.setLocation(x, y);
+
+                if (filledPositions.contains(pointToTest))
+                {
+                    sbRow.append("[X] ");
+                }
+                else
+                {
+                    sbRow.append("[ ] ");
+                }
+            }
+
+            sb.append(sbRow.toString() + "\n");
+        }
+
+        return sb.toString();
+    }
+
     private void registerQueenServices()
     {
         ServiceDescription queenService = new ServiceDescription();
@@ -312,12 +341,12 @@ public class QueenAgent extends Agent
 
                         // if our current position is in the filled position list, we know we need to clear that
                         // position and find another safe position
-                        if(filledPositions.contains(position))
+                        if (filledPositions.contains(position))
                         {
                             filledPositions.remove(position);
                         }
 
-                        if(findSafePosition(filledPositions, triedPositions))
+                        if (findSafePosition(filledPositions, triedPositions))
                         {
                             // we found a safe position
                             // if we are the last queen the problem is solved
@@ -326,13 +355,17 @@ public class QueenAgent extends Agent
 
                             filledPositions.add(position);
 
-                            if(id == n-1)
+                            if (id == n-1)
                             {
-                                // TODO : Print solution - matrix
-                                System.out.println("SUCCESS! - Filled positions: " + filledPositions);
+                                // This is the last queen, we are done
+                                System.out.println("SUCCESS!\n" + printChessboard(filledPositions));
                             }
                             else
                             {
+                                System.out.println(thisAgent.getName()
+                                        + " - Sending request to successor: " + thisAgent.successor.getName()
+                                );
+
                                 addBehaviour(
                                         new SetPositionRequestSenderOneShotBehaviour(
                                                 thisAgent,
@@ -347,6 +380,10 @@ public class QueenAgent extends Agent
                             // we did not find any untried safe position
                             // send message to predecessor, asking him to update his position
                             triedPositions.clear();
+
+                            System.out.println(thisAgent.getName()
+                                    + " - Sending request to predecessor: " + thisAgent.predecessor.getName()
+                            );
 
                             addBehaviour(
                                     new SetPositionRequestSenderOneShotBehaviour(
