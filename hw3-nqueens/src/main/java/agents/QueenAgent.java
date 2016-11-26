@@ -73,6 +73,7 @@ public class QueenAgent extends Agent
         System.out.println("QueenAgent " + getAID().getName() + " terminating.");
     }
 
+<<<<<<< HEAD
     /**
      * Set the current position
      * */
@@ -107,23 +108,23 @@ public class QueenAgent extends Agent
     /**
      * Check if a position is safe, i.e. it is not on the same row, column or diagonal as any other queen
      * */
-    private boolean isPointSafe(Point position, ArrayList<Point> queenPositions)
+    private boolean isPointSafe(Point position, ArrayList<Point> filledPositions)
     {
-        for(Point queenPosition : queenPositions)
+        for(Point filledPosition : filledPositions)
         {
-            if (position.x == queenPosition.x)
+            if(position.x == filledPosition.x)
             {
-                // the queens are in the same column
+                // this is no a safe position - the queens are in the same column
                 return false;
             }
             else
             {
-                int deltaRow = Math.abs(position.y - queenPosition.y);
-                int deltaColumn = Math.abs(position.x - queenPosition.x);
+                int deltaRow = Math.abs(position.y - filledPosition.y);
+                int deltaColumn = Math.abs(position.x - filledPosition.x);
 
                 if (deltaRow == deltaColumn)
                 {
-                    // the queens are on the same diagonal
+                    // this is not a safe position - the queens are on the same diagonal
                     return false;
                 }
             }
@@ -280,14 +281,20 @@ public class QueenAgent extends Agent
 
                 try
                 {
-                    // TODO : set string constants somewhere
                     ArrayList<Point> filledPositions = (ArrayList<Point>) msg.getContentObject();
+
+                    if (requestType.equals(SET_POSITION_REQUEST))
+                    {
+
+                    }
+                    else if(requestType.equals((CHANGE_POSITION_REQUEST)))
+                    {
+
+                    }
                 }
                 catch (Exception ex)
                 {
                     ex.printStackTrace();
-
-                    // TODO : reply with not understood
                 }
             }
             else
