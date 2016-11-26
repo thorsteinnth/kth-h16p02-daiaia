@@ -310,17 +310,37 @@ public class QueenAgent extends Agent
 
                         QueenAgent thisAgent = (QueenAgent)myAgent;
 
+                        // if our current position is in the filled position list, we know we need to clear that
+                        // position and find another safe position
+                        if(filledPositions.contains(position))
+                        {
+                            filledPositions.remove(position);
+                        }
+
                         if(findSafePosition(filledPositions, triedPositions))
                         {
                             // we found a safe position
-                            // lets forward the filled positions to our successor
-                            addBehaviour(
-                                    new SetPositionRequestSenderOneShotBehaviour(
-                                            thisAgent,
-                                            thisAgent.successor,
-                                            filledPositions
-                                    )
-                            );
+                            // if we are the last queen the problem is solved
+                            // otherwise we add our position to the list of filled positions and
+                            // send it to our successor so he can find a position
+
+                            if(id == n-1)
+                            {
+                                // TODO : Print solution - matrix
+                                System.out.println("SUCCESS!");
+                            }
+                            else
+                            {
+                                filledPositions.add(position);
+
+                                addBehaviour(
+                                        new SetPositionRequestSenderOneShotBehaviour(
+                                                thisAgent,
+                                                thisAgent.successor,
+                                                filledPositions
+                                        )
+                                );
+                            }
                         }
                         else
                         {
