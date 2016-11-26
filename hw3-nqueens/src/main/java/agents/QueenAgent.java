@@ -97,71 +97,81 @@ public class QueenAgent extends Agent
         }
     }
 
-    /**
-     * Search the DF for queens
-     */
-    private void getQueens()
-    {
-        ArrayList<AID> foundQueens = new ArrayList<>();
+    //region DF search
 
-        // Queen service template
+    private DFAgentDescription getQueenWithIdAgentDescription(int id)
+    {
         DFAgentDescription queenServiceTemplate = new DFAgentDescription();
 
         ServiceDescription sd = new ServiceDescription();
         sd.setType(ServiceList.SRVC_QUEEN_TYPE);
         sd.setName(ServiceList.SRVC_QUEEN_NAME);
 
-        // Want to find my predecessor and successor, if any
-        if (this.id == 0)
-        {
-            // Only find a successor (ID 1)
-            Property propQueenId = new Property();
-            propQueenId.setName("ID");
-            propQueenId.setValue(this.id+1);
-            sd.addProperties(propQueenId);
-        }
-        if (this.id == n-1)
-        {
-            // Only find predecessor
-            Property propQueenId = new Property();
-            propQueenId.setName("ID");
-            propQueenId.setValue(this.id-1);
-            sd.addProperties(propQueenId);
-        }
-        else
-        {
-            // Find both predecessor and successor
-            Property propQueenIdPred = new Property();
-            propQueenIdPred.setName("ID");
-            propQueenIdPred.setValue(this.id-1);
-            Property propQueenIdSucc = new Property();
-            propQueenIdSucc.setName("ID");
-            propQueenIdSucc.setValue(this.id+1);
-
-            sd.addProperties(propQueenIdPred);
-            sd.addProperties(propQueenIdSucc);
-        }
+        Property propQueenId = new Property();
+        propQueenId.setName("ID");
+        propQueenId.setValue(id);
+        sd.addProperties(propQueenId);
 
         queenServiceTemplate.addServices(sd);
 
+        return queenServiceTemplate;
+    }
+
+    /**
+     * Search the DF for queens
+     */
+    private void getPredecessorAndSuccessor()
+    {
         try
         {
-            DFAgentDescription[] result = DFService.search(this, queenServiceTemplate);
+            // Find predecessor
 
-            for (int i = 0; i < result.length; ++i)
+            ArrayList<AID> foundPredecessors = new ArrayList<>();
+
+            DFAgentDescription[] predecessorResult = DFService.search(this, getQueenWithIdAgentDescription(this.id-1));
+
+            for (int i = 0; i < predecessorResult.length; ++i)
             {
-                foundQueens.add(result[i].getName());
+                foundPredecessors.add(predecessorResult[i].getName());
             }
 
-            System.out.println(getName() + " - Found " + foundQueens.size() + " queens: " + foundQueens);
+            //System.out.println(getName() + " - Found " + foundPredecessors.size() + " predecessors: " + foundPredecessors);
 
-            // TODO Save to predecessor and successor variables
+            // Find successors
+
+            ArrayList<AID> foundSuccessors = new ArrayList<>();
+
+            DFAgentDescription[] successorResult = DFService.search(this, getQueenWithIdAgentDescription(this.id+1));
+
+            for (int i = 0; i < successorResult.length; ++i)
+            {
+                foundSuccessors.add(successorResult[i].getName());
+            }
+
+            //System.out.println(getName() + " - Found " + foundSuccessors.size() + " successors: " + foundSuccessors);
+
+            if (foundPredecessors.size() == 1)
+            {
+                this.predecessor = foundPredecessors.get(0);
+            }
+
+            if (foundSuccessors.size() == 1)
+            {
+                this.successor = foundSuccessors.get(0);
+            }
+
+            System.out.println(getName()
+                    + " - Predecessor: " + (this.predecessor != null ? this.predecessor.getName() : "null")
+                    + " - Successor: " + (this.successor != null ? this.successor.getName() : "null")
+            );
         }
         catch (FIPAException fe)
         {
             fe.printStackTrace();
         }
     }
+
+    //endregion
 
     //region Behaviours
 
@@ -177,7 +187,7 @@ public class QueenAgent extends Agent
         {
             super.onWake();
 
-            getQueens();
+            getPredecessorAndSuccessor();
         }
     }
 
