@@ -72,8 +72,7 @@ public class QueenAgent extends Agent
         deregisterQueenServices();
         System.out.println("QueenAgent " + getAID().getName() + " terminating.");
     }
-
-<<<<<<< HEAD
+    
     /**
      * Set the current position
      * */
