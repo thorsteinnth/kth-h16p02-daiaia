@@ -13,9 +13,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.*;
-import java.util.List;
 
 public class QueenAgent extends Agent
 {
@@ -75,11 +73,45 @@ public class QueenAgent extends Agent
         System.out.println("QueenAgent " + getAID().getName() + " terminating.");
     }
 
-    private boolean safe(Point position, ArrayList<Point> queenPositions)
+    /**
+     * Set the current position
+     * */
+    private void setPosition(Point position)
+    {
+        this.position = position;
+        this.triedPositions.add(position);
+    }
+
+    /**
+     * Find and set the next safe position on my row in the matrix. Ignore positions we have already tried.
+     * Return true if successful, false otherwise
+     * */
+    private boolean findSafePosition(ArrayList<Point> queenPositions, ArrayList<Point> triedPositions)
+    {
+        // Iterate through my row in the matrix until I find a safe position I haven't tried yet
+
+        Point pointToTry = new Point(0, this.id);
+        for (int x = 0; x < n; x++)
+        {
+            pointToTry.setLocation(x, pointToTry.y);
+            if (!triedPositions.contains(pointToTry) && isPointSafe(pointToTry, queenPositions))
+            {
+                setPosition(pointToTry);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a position is safe, i.e. it is not on the same row, column or diagonal as any other queen
+     * */
+    private boolean isPointSafe(Point position, ArrayList<Point> queenPositions)
     {
         for(Point queenPosition : queenPositions)
         {
-            if(position.x == queenPosition.x)
+            if (position.x == queenPosition.x)
             {
                 // the queens are in the same column
                 return false;
@@ -89,7 +121,7 @@ public class QueenAgent extends Agent
                 int deltaRow = Math.abs(position.y - queenPosition.y);
                 int deltaColumn = Math.abs(position.x - queenPosition.x);
 
-                if(deltaRow == deltaColumn)
+                if (deltaRow == deltaColumn)
                 {
                     // the queens are on the same diagonal
                     return false;
@@ -97,7 +129,6 @@ public class QueenAgent extends Agent
             }
         }
 
-        this.triedPositions.add(position);
         return true;
     }
 
