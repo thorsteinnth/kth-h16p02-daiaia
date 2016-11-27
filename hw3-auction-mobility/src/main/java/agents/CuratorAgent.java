@@ -261,7 +261,7 @@ public class CuratorAgent extends MobileAgent
                     }
 
                     agent.bidRequestResponder = new BidRequestResponder(
-                            myAgent,
+                            (CuratorAgent)myAgent,
                             MessageTemplate.and(
                                     MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION),
                                     MessageTemplate.MatchConversationId(conversationId)
@@ -280,9 +280,12 @@ public class CuratorAgent extends MobileAgent
 
     private class BidRequestResponder extends ContractNetResponder
     {
-        public BidRequestResponder(Agent agent, MessageTemplate mt)
+        private CuratorAgent agent;
+
+        public BidRequestResponder(CuratorAgent agent, MessageTemplate mt)
         {
             super(agent, mt);
+            this.agent = agent;
         }
 
         @Override
@@ -309,6 +312,7 @@ public class CuratorAgent extends MobileAgent
                     // let's bid the asking price
                     reply.setPerformative(ACLMessage.PROPOSE);
                     reply.setContent(String.valueOf(dto.askingPrice));
+                    agent.myGui.setInfo("Bid placed: " + dto.askingPrice);
                 }
                 else
                 {
@@ -316,6 +320,7 @@ public class CuratorAgent extends MobileAgent
                     // Let's refuse the CFP
                     reply.setPerformative(ACLMessage.REFUSE);
                     reply.setContent("Asking price too high");
+                    agent.myGui.setInfo("Bid request refused");
                 }
             }
             catch (UnreadableException|NumberFormatException ex)
@@ -323,6 +328,7 @@ public class CuratorAgent extends MobileAgent
                 System.err.println(ex);
                 reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
                 reply.setContent("not understood");
+                agent.myGui.setInfo("Not understood");
             }
 
             return reply;
@@ -338,6 +344,8 @@ public class CuratorAgent extends MobileAgent
 
             System.out.println(myAgent.getName() + " - Won the auction. Strategy: " + biddingStrategy);
 
+            agent.myGui.setInfo("Bid accepted - winner");
+
             return reply;
         }
 
@@ -345,6 +353,7 @@ public class CuratorAgent extends MobileAgent
         protected void handleRejectProposal(ACLMessage cfp, ACLMessage propose, ACLMessage reject)
         {
             System.out.println(myAgent.getName() + " - " + AgentHelper.getAclMessageDisplayString(reject));
+            agent.myGui.setInfo("Bid rejected - loser");
         }
 
         private double getStrategyMultiplier(Painting painting)
