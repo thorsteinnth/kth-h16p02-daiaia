@@ -59,8 +59,8 @@ public class CuratorAgent extends MobileAgent
         }
         else
         {
-            invalidCommandLineArguments();
-            return;
+            // default to all passive
+            this.biddingStrategy = BiddingStrategy.PASSIVE;
         }
 
         registerCuratorServices();
