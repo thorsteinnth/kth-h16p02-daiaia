@@ -3,6 +3,8 @@ package mobility;
 import java.util.*;
 import java.io.*;
 
+import agents.ArtistManagerAgent;
+import agents.CuratorAgent;
 import jade.lang.acl.*;
 import jade.content.*;
 import jade.content.onto.basic.*;
@@ -28,10 +30,11 @@ public class ControllerAgent extends GuiAgent {
    transient protected ControllerAgentGui myGui;
 
    public static final int QUIT = 0;
-   public static final int NEW_AGENT = 1;
-   public static final int MOVE_AGENT = 2;
-   public static final int CLONE_AGENT = 3;
-   public static final int KILL_AGENT = 4;
+   public static final int NEW_ARTISTMANAGER_AGENT = 1;
+   public static final int NEW_CURATOR_AGENT = 2;
+   public static final int MOVE_AGENT = 3;
+   public static final int CLONE_AGENT = 4;
+   public static final int KILL_AGENT = 5;
 
    // Get a JADE Runtime instance
    jade.core.Runtime runtime = jade.core.Runtime.instance();
@@ -93,14 +96,14 @@ public class ControllerAgent extends GuiAgent {
 		 doDelete();
 		 System.exit(0);
       }
-	  if (command == NEW_AGENT) {
+	  if (command == NEW_ARTISTMANAGER_AGENT) {
 
 	     jade.wrapper.AgentController a = null;
          try {
             Object[] args = new Object[2];
             args[0] = getAID();
-            String name = "Agent"+agentCnt++;
-            a = home.createNewAgent(name, MobileAgent.class.getName(), args);
+            String name = "ArtisManagerAgent"+agentCnt++;
+            a = home.createNewAgent(name, ArtistManagerAgent.class.getName(), args);
 	        a.start();
 	        agents.add(name);
 	        myGui.updateList(agents);
@@ -110,6 +113,23 @@ public class ControllerAgent extends GuiAgent {
 	     }
          return;
 	  }
+	  else if (command == NEW_CURATOR_AGENT) {
+
+          jade.wrapper.AgentController a = null;
+          try {
+              Object[] args = new Object[2];
+              args[0] = getAID();
+              String name = "CuratorAgent"+agentCnt++;
+              a = home.createNewAgent(name, CuratorAgent.class.getName(), args);
+              a.start();
+              agents.add(name);
+              myGui.updateList(agents);
+          }
+          catch (Exception ex) {
+              System.out.println("Problem creating new agent");
+          }
+          return;
+      }
       String agentName = (String)ev.getParameter(0);
       AID aid = new AID(agentName, AID.ISLOCALNAME);
 

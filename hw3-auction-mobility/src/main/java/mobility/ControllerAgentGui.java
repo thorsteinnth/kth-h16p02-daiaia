@@ -82,8 +82,8 @@ public class ControllerAgentGui extends JFrame implements ActionListener {
       pane.setBorder(new EmptyBorder(0,0,110,0));
 	  base.add(pane, BorderLayout.EAST);
       pane.setLayout(new GridLayout(2,1,0,5));
-      pane.add(newAuctioneerAgent = new JButton("New auctioneer agent"));
-      newAuctioneerAgent.setToolTipText("Create a new agent");
+      pane.add(newAuctioneerAgent = new JButton("New artist manager agent"));
+      newAuctioneerAgent.setToolTipText("Create a new artist manager agent");
       newAuctioneerAgent.addActionListener(this);
        pane.add(newCuratorAgent = new JButton("New curator agent"));
        newCuratorAgent.setToolTipText("Create a new curator agent");
@@ -108,13 +108,13 @@ public class ControllerAgentGui extends JFrame implements ActionListener {
 
       if (ae.getSource() == newAuctioneerAgent) {
 
-         GuiEvent ge = new GuiEvent(this, myAgent.NEW_AGENT);
+         GuiEvent ge = new GuiEvent(this, myAgent.NEW_ARTISTMANAGER_AGENT);
          myAgent.postGuiEvent(ge);
 	  }
 	  else if (ae.getSource() == newCuratorAgent) {
 
-          // new curator agent
-          System.out.println("new curator agent");
+          GuiEvent ge = new GuiEvent(this, myAgent.NEW_CURATOR_AGENT);
+          myAgent.postGuiEvent(ge);
       }
       else if(ae.getSource() == move) {
 
