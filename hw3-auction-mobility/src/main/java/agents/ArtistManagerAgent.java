@@ -2,15 +2,25 @@ package agents;
 
 import DTOs.BidRequestDTO;
 import artifacts.Painting;
+import jade.content.ContentElement;
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.OntologyException;
+import jade.content.onto.basic.Action;
+import jade.content.onto.basic.Result;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.Location;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
+import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.domain.mobility.MobilityOntology;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetInitiator;
 import mobility.MobileAgent;
@@ -23,13 +33,13 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ArtistManagerAgent extends MobileAgent
 {
     private DFAgentDescription bidderServiceTemplate;
-    private ArrayList<AID> bidders;
+    private ArrayList<AID> biddersInSameContainer;
 
     protected void setup()
     {
         super.setup();
 
-        this.bidders = new ArrayList<>();
+        this.biddersInSameContainer = new ArrayList<>();
 
         // Bidder service template
         this.bidderServiceTemplate = new DFAgentDescription();
@@ -55,10 +65,26 @@ public class ArtistManagerAgent extends MobileAgent
         this.addBehaviour(new AuctionManagementBehaviour(this));
     }
 
+    private void getBiddersInSameContainer()
+    {
+        ArrayList<AID> allBidders = getBidders();
+        ArrayList<AID> biddersInSameContainer = new ArrayList<>();
+        
+        for (AID bidder : allBidders)
+        {
+            ArrayList<Location> bidderLocations = getAgentLocations(bidder);
+            if (bidderLocations.contains(here()))
+                biddersInSameContainer.add(bidder);
+        }
+
+        System.out.println(getName() + " - Found " + biddersInSameContainer.size() + " bidders in same container");
+        this.biddersInSameContainer = biddersInSameContainer;
+    }
+
     /**
      * Search the DF for bidders
      */
-    private void getBidders()
+    private ArrayList<AID> getBidders()
     {
         ArrayList<AID> foundBidders = new ArrayList<>();
 
@@ -69,15 +95,14 @@ public class ArtistManagerAgent extends MobileAgent
             {
                 foundBidders.add(result[i].getName());
             }
-
-            System.out.println(getName() + " - Found " + foundBidders.size() + " bidders");
-
-            this.bidders = foundBidders;
         }
         catch (FIPAException fe)
         {
             fe.printStackTrace();
         }
+
+        System.out.println(getName() + " - Found " + foundBidders.size() + " bidders in total");
+        return foundBidders;
     }
 
     //region Behaviours
@@ -106,11 +131,11 @@ public class ArtistManagerAgent extends MobileAgent
             myGui.setInfo("");
 
             // Update bidder list
-            getBidders();
-            if (bidders.size() == 0)
+            getBiddersInSameContainer();
+            if (biddersInSameContainer.size() == 0)
             {
                 System.out.println(myAgent.getName()
-                        + " - AuctionManagementBehaviour - there are no bidders, aborting");
+                        + " - AuctionManagementBehaviour - there are no bidders (in same container), aborting");
 
                 myGui.setInfo("No bidders. Aborting auction.");
 
@@ -133,7 +158,7 @@ public class ArtistManagerAgent extends MobileAgent
                 cfp.setConversationId("auction-" + painting.getName());
                 BidRequestDTO dto = new BidRequestDTO(painting, getInitialAskingPrice(painting));
                 cfp.setContentObject(dto);
-                for (AID bidder : bidders)
+                for (AID bidder : biddersInSameContainer)
                     cfp.addReceiver(bidder);
 
                 this.addSubBehaviour(new DutchAuctionInitiator(myAgent, cfp));
@@ -161,7 +186,7 @@ public class ArtistManagerAgent extends MobileAgent
             ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
             inform.setContent("start-of-auction");
             inform.setConversationId("auction-" + painting.getName());
-            for (AID bidder : bidders)
+            for (AID bidder : biddersInSameContainer)
                 inform.addReceiver(bidder);
 
             myAgent.send(inform);
@@ -238,7 +263,7 @@ public class ArtistManagerAgent extends MobileAgent
                 {
                     // Remove bidder from list of possible bidders
                     AID bidderThatDidntUnderstand = response.getSender();
-                    bidders.remove(bidderThatDidntUnderstand);
+                    biddersInSameContainer.remove(bidderThatDidntUnderstand);
                 }
             }
 
@@ -265,7 +290,7 @@ public class ArtistManagerAgent extends MobileAgent
                     }
 
                     // Start the next iteration, if we have any bidders left
-                    if (bidders.size() > 0)
+                    if (biddersInSameContainer.size() > 0)
                     {
                         // Lower the price
                         BidRequestDTO newDTO = new BidRequestDTO(
@@ -276,7 +301,7 @@ public class ArtistManagerAgent extends MobileAgent
 
                         // Update the bidders list
                         cfp.clearAllReceiver();
-                        for (AID bidder : bidders)
+                        for (AID bidder : biddersInSameContainer)
                             cfp.addReceiver(bidder);
 
                         // Set up and start next iteration
@@ -422,5 +447,54 @@ public class ArtistManagerAgent extends MobileAgent
     {
         ArrayList<Painting> paintings = AgentHelper.generatePaintings();
         return paintings.get(ThreadLocalRandom.current().nextInt(paintings.size()));
+    }
+
+    /**
+     * Get agent locations (containers) from AMS
+     * */
+    private ArrayList<Location> getAgentLocations(AID agentAID)
+    {
+        ArrayList<Location> locations = new ArrayList<>();
+
+        try
+        {
+            // Set up action
+            WhereIsAgentAction whereIsAgentAction = new WhereIsAgentAction();
+            whereIsAgentAction.setAgentIdentifier(agentAID);
+            Action action = new Action(getAMS(), whereIsAgentAction);
+
+            // Set up request message
+            ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
+            request.setLanguage(new SLCodec().getName());
+            request.setOntology(MobilityOntology.getInstance().getName());
+
+            // Send request message
+            getContentManager().fillContent(request, action);
+            request.addReceiver(action.getActor());
+            send(request);
+
+            // Receive response
+            MessageTemplate mt = MessageTemplate.and(
+                MessageTemplate.MatchSender(getAMS()),
+                MessageTemplate.MatchPerformative(ACLMessage.INFORM)
+            );
+            ACLMessage resp = blockingReceive(mt);
+
+            // Process response
+            ContentElement ce = getContentManager().extractContent(resp);
+            Result result = (Result)ce;
+            jade.util.leap.Iterator it = result.getItems().iterator();
+            while (it.hasNext())
+            {
+                Location loc = (Location) it.next();
+                locations.add(loc);
+            }
+        }
+        catch (Codec.CodecException|OntologyException ex)
+        {
+            System.err.println(ex);
+        }
+
+        return locations;
     }
 }
