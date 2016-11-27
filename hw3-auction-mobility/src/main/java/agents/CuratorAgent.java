@@ -12,11 +12,12 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetResponder;
+import mobility.MobileAgent;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-public class CuratorAgent extends Agent
+public class CuratorAgent extends MobileAgent
 {
     private enum BiddingStrategy
     {

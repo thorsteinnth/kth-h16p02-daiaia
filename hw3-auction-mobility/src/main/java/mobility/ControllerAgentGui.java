@@ -17,7 +17,7 @@ public class ControllerAgentGui extends JFrame implements ActionListener {
    private JList list;
    private DefaultListModel listModel;
    private JComboBox locations;
-   private JButton newAgent, move, clone, kill, quit;
+   private JButton newAuctioneerAgent, newCuratorAgent, move, clone, kill, quit;
    private ControllerAgent myAgent;
 
    public ControllerAgentGui(ControllerAgent a, Set s) {
@@ -82,9 +82,12 @@ public class ControllerAgentGui extends JFrame implements ActionListener {
       pane.setBorder(new EmptyBorder(0,0,110,0));
 	  base.add(pane, BorderLayout.EAST);
       pane.setLayout(new GridLayout(2,1,0,5));
-      pane.add(newAgent = new JButton("New agent"));
-      newAgent.setToolTipText("Create a new agent");
-      newAgent.addActionListener(this);
+      pane.add(newAuctioneerAgent = new JButton("New auctioneer agent"));
+      newAuctioneerAgent.setToolTipText("Create a new agent");
+      newAuctioneerAgent.addActionListener(this);
+       pane.add(newCuratorAgent = new JButton("New curator agent"));
+       newCuratorAgent.setToolTipText("Create a new curator agent");
+       newCuratorAgent.addActionListener(this);
       pane.add(quit = new JButton("Quit"));
       quit.setToolTipText("Terminate this program");
       quit.addActionListener(this);
@@ -96,18 +99,23 @@ public class ControllerAgentGui extends JFrame implements ActionListener {
 	  });
 
       setSize(300, 210);
-      setResizable(false);
+      setResizable(true);
       pack();
    }
 
    public void actionPerformed(ActionEvent ae) {
 // ---------------------------------------------
 
-      if (ae.getSource() == newAgent) {
+      if (ae.getSource() == newAuctioneerAgent) {
 
          GuiEvent ge = new GuiEvent(this, myAgent.NEW_AGENT);
          myAgent.postGuiEvent(ge);
 	  }
+	  else if (ae.getSource() == newCuratorAgent) {
+
+          // new curator agent
+          System.out.println("new curator agent");
+      }
       else if(ae.getSource() == move) {
 
          GuiEvent ge = new GuiEvent(this, myAgent.MOVE_AGENT);
