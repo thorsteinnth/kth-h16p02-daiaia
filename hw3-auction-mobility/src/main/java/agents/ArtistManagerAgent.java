@@ -13,19 +13,22 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetInitiator;
+import mobility.MobileAgent;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ArtistManagerAgent extends Agent
+public class ArtistManagerAgent extends MobileAgent
 {
     private DFAgentDescription bidderServiceTemplate;
     private ArrayList<AID> bidders;
 
     protected void setup()
     {
+        super.setup();
+
         this.bidders = new ArrayList<>();
 
         // Bidder service template

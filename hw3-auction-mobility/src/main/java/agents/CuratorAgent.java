@@ -33,6 +33,8 @@ public class CuratorAgent extends MobileAgent
 
     protected void setup()
     {
+        super.setup();
+
         // Get command line arguments
         Object[] args = getArguments();
         if (args != null && args.length == 1)
