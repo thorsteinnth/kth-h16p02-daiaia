@@ -64,7 +64,7 @@ public class QueenAgent extends Agent
         this.triedPositions = new ArrayList<>();
         this.position = new Point(0, this.id);
 
-        this.addBehaviour(new InitWakerBehaviour(this, 5000));
+        this.addBehaviour(new InitWakerBehaviour(this, 3000));
 
         System.out.println("QueenAgent " + getAID().getName() + " is ready. ID: " + this.id + " n: " + this.n);
     }
@@ -82,7 +82,7 @@ public class QueenAgent extends Agent
     {
         this.position = position;
         this.triedPositions.add(position);
-        System.out.println(getName() + " - Set position: " + this.position);
+        System.out.println(getName() + " - Set position: [" + this.position.x + "," + this.position.y + "]");
     }
 
     /**
