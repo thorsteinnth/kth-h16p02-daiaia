@@ -30,6 +30,7 @@ public class CuratorAgent extends MobileAgent
     private ArrayList<Painting.PaintingMedium> paintingMediumInterests;
     private ArrayList<String> artistInterests;
     private BiddingStrategy biddingStrategy;
+    private BidRequestResponder bidRequestResponder;
 
     protected void setup()
     {
@@ -66,7 +67,7 @@ public class CuratorAgent extends MobileAgent
         }
 
         registerCuratorServices();
-        addBehaviour(new WaitForAuction());
+        addBehaviour(new WaitForAuction(this));
         getPaintingInterests();
         System.out.println("CuratorAgent " + getAID().getName() + " is ready. Strategy: " + this.biddingStrategy);
     }
@@ -194,6 +195,14 @@ public class CuratorAgent extends MobileAgent
      */
     private class WaitForAuction extends CyclicBehaviour
     {
+        private CuratorAgent agent;
+
+        public WaitForAuction(CuratorAgent a)
+        {
+            super(a);
+            this.agent = a;
+        }
+
         public void action()
         {
             MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
@@ -210,15 +219,27 @@ public class CuratorAgent extends MobileAgent
                     System.out.println(myAgent.getName() + " - Received start of auction message with conversation ID: "
                             + conversationId);
 
-                    addBehaviour(
-                            new BidRequestResponder(
-                                    myAgent,
-                                    MessageTemplate.and(
-                                            MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION),
-                                            MessageTemplate.MatchConversationId(conversationId)
-                                    )
+                    if (agent.bidRequestResponder != null)
+                    {
+                        // This is not the first auction.
+                        // Remove the previous responder behaviour.
+                        // (this agent does not necessarily know that the previous auction is over)
+                        // (can only partake in one auction at a time by doing it like this)
+                        // (this is a hack, auctioneer should send an inform message to all
+                        // participants when an auction is over, and they would then remove their
+                        // BidRequestResponder behaviours)
+                        removeBehaviour(agent.bidRequestResponder);
+                    }
+
+                    agent.bidRequestResponder = new BidRequestResponder(
+                            myAgent,
+                            MessageTemplate.and(
+                                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION),
+                                    MessageTemplate.MatchConversationId(conversationId)
                             )
                     );
+
+                    addBehaviour(agent.bidRequestResponder);
                 }
             }
             else
