@@ -25,15 +25,15 @@ public class MobileAgent extends GuiAgent {
    protected void setup() {
 // ------------------------
 
-   	  // Retrieve arguments passed during this agent creation
-   	  Object[] args = getArguments();
+	  // Retrieve arguments passed during this agent creation
+	  Object[] args = getArguments();
 	  controller = (AID) args[0];
 	  destination = here();
 
-	  init();
+	   init();
 
 	  // Program the main behaviour of this agent
-      addBehaviour(new ReceiveCommands(this));
+	  addBehaviour(new ReceiveCommands(this));
    }
 
    void init() {
@@ -57,9 +57,9 @@ public class MobileAgent extends GuiAgent {
    protected void beforeMove() {
 // -----------------------------
 
-      System.out.println("Moving now to location : " + destination.getName());
-      myGui.setVisible(false);
-      myGui.dispose();
+	  System.out.println("Moving now to location : " + destination.getName());
+	  myGui.setVisible(false);
+	  myGui.dispose();
    }
 
    protected void afterMove() {
@@ -72,7 +72,7 @@ public class MobileAgent extends GuiAgent {
    protected void beforeClone() {
 // -----------------------------
 
-      myGui.setInfo("Cloning myself to location : " + destination.getName());
+	  myGui.setInfo("Cloning myself to location : " + destination.getName());
    }
 
    protected void afterClone() {
@@ -88,17 +88,17 @@ public class MobileAgent extends GuiAgent {
    class ReceiveCommands extends CyclicBehaviour {
 // -----------------------------------------------
 
-      ReceiveCommands(Agent a) { super(a); }
+	  ReceiveCommands(Agent a) { super(a); }
 
 	  public void action() {
 
-         ACLMessage msg = receive(MessageTemplate.MatchSender(controller));
+		 ACLMessage msg = receive(MessageTemplate.MatchSender(controller));
 
-         if (msg == null) { block(); return; }
+		 if (msg == null) { block(); return; }
 
-	     if (msg.getPerformative() == ACLMessage.REQUEST){
+		 if (msg.getPerformative() == ACLMessage.REQUEST){
 
-		    try {
+			try {
 			   ContentElement content = getContentManager().extractContent(msg);
 			   Concept concept = ((Action)content).getAction();
 
