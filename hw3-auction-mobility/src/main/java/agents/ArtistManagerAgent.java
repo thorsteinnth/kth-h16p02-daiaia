@@ -38,7 +38,8 @@ public class ArtistManagerAgent extends MobileAgent
         sd.setName(ServiceList.SRVC_CURATOR_BIDDER_NAME);
         this.bidderServiceTemplate.addServices(sd);
 
-        this.addBehaviour(new AuctionManagementWaker(this, 5000));
+        // We start the auction from the GUI instead
+        //this.addBehaviour(new AuctionManagementWaker(this, 5000));
 
         System.out.println("ArtistManagerAgent " + getAID().getName() + " is ready.");
     }
@@ -46,6 +47,12 @@ public class ArtistManagerAgent extends MobileAgent
     protected void takeDown()
     {
         System.out.println("ArtistManagerAgent " + getAID().getName() + " terminating.");
+    }
+
+    public void startAuction()
+    {
+        System.out.println(this.getName() + " - Starting auction");
+        this.addBehaviour(new AuctionManagementBehaviour(this));
     }
 
     /**
