@@ -2,6 +2,7 @@ package agents;
 
 import DTOs.BidRequestDTO;
 import artifacts.Painting;
+import gui.CuratorAgentGui;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
@@ -38,6 +39,8 @@ public class CuratorAgent extends MobileAgent
 
     protected void setup()
     {
+        super.setup();
+
         // Get command line arguments
         Object[] args = getArguments();
         if (args != null && args.length == 1)
@@ -68,7 +71,7 @@ public class CuratorAgent extends MobileAgent
             this.biddingStrategy = BiddingStrategy.PASSIVE;
         }
 
-        super.setup();
+        ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
 
         registerCuratorServices();
         addBehaviour(new WaitForAuction());
@@ -90,6 +93,18 @@ public class CuratorAgent extends MobileAgent
 
         // Terminate agent
         doDelete();
+    }
+
+    protected void afterClone() {
+// ----------------------------
+
+        super.afterClone();
+
+        // randomly generate new interests for the clone
+        this.resetPaintingInterests();
+        this.getPaintingInterests();
+
+        ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
     }
 
     private void registerCuratorServices()
@@ -122,6 +137,12 @@ public class CuratorAgent extends MobileAgent
         {
             fe.printStackTrace();
         }
+    }
+
+    private void resetPaintingInterests()
+    {
+        this.subjectMatterInterests = new ArrayList<>();
+        this.paintingMediumInterests = new ArrayList<>();
     }
 
     private void getPaintingInterests()
@@ -189,6 +210,9 @@ public class CuratorAgent extends MobileAgent
         randomArtist = artists.get(random.nextInt(artists.size()));
         if (!this.artistInterests.contains(randomArtist))
             this.artistInterests.add(randomArtist);
+
+        ((CuratorAgentGui)myGui).setInterests(
+                this.subjectMatterInterests.toString() + " " + this.paintingMediumInterests.toString());
     }
 
     //region Behaviours

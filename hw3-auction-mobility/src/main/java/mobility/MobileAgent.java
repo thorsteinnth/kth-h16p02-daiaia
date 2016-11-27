@@ -51,7 +51,6 @@ public class MobileAgent extends GuiAgent {
 		   myGui = new CuratorAgentGui((CuratorAgent)this);
            myGui.setVisible(true);
            myGui.setLocation(destination.getName());
-           ((CuratorAgentGui)myGui).setStrategy(((CuratorAgent)this).getStrategy());
 	   }
 	   else if (this instanceof ArtistManagerAgent)
 	   {

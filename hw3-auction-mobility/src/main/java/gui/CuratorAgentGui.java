@@ -7,17 +7,22 @@ import java.awt.*;
 public class CuratorAgentGui extends MobileAgentGui
 {
     private JLabel strategy;
+    private JLabel interests;
 
     public CuratorAgentGui(CuratorAgent a){
 
         super(a);
         Component[] components = getContentPane().getComponents();
         JPanel base = (JPanel)components[0];
-        JPanel pane = new JPanel();
-        pane.setLayout(new BorderLayout(20,0));
+
+        JPanel strategyPane = new JPanel();
+        strategyPane.setLayout(new BorderLayout(200,0));
         strategy = new JLabel();
-        pane.add(strategy, BorderLayout.WEST);
-        base.add(pane, BorderLayout.SOUTH);
+        strategyPane.add(strategy, BorderLayout.SOUTH);
+        base.add(strategyPane, BorderLayout.SOUTH);
+
+        interests = new JLabel();
+        base.add(interests, BorderLayout.SOUTH);
     }
 
     public void setLocation(String loc){
@@ -30,8 +35,13 @@ public class CuratorAgentGui extends MobileAgentGui
         super.setInfo(info);
     }
 
-    public void setStrategy(String info){
+    public void setStrategy(String strategy){
 
-        this.strategy.setText("Strategy: " + info);
+        this.strategy.setText("Strategy: " + strategy);
+    }
+
+    public void setInterests(String interests){
+
+        this.interests.setText("Interests: " + interests);
     }
 }
