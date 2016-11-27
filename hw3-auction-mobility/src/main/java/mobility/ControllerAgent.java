@@ -102,7 +102,7 @@ public class ControllerAgent extends GuiAgent {
          try {
             Object[] args = new Object[2];
             args[0] = getAID();
-            String name = "ArtisManagerAgent"+agentCnt++;
+            String name = "ArtistManagerAgent"+agentCnt++;
             a = home.createNewAgent(name, ArtistManagerAgent.class.getName(), args);
 	        a.start();
 	        agents.add(name);
