@@ -1,4 +1,4 @@
-package mobility;
+package gui;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -9,6 +9,7 @@ import javax.swing.border.*;
 
 import jade.core.*;
 import jade.gui.*;
+import mobility.ControllerAgent;
 
 
 public class ControllerAgentGui extends JFrame implements ActionListener {

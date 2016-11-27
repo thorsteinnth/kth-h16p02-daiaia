@@ -1,10 +1,11 @@
-package mobility;
+package gui;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
 import jade.gui.*;
+import mobility.MobileAgent;
 
 
 public class MobileAgentGui extends JFrame {

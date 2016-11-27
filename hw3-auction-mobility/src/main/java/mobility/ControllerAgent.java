@@ -1,18 +1,15 @@
 package mobility;
 
 import java.util.*;
-import java.io.*;
 
 import agents.ArtistManagerAgent;
 import agents.CuratorAgent;
+import gui.ControllerAgentGui;
 import jade.lang.acl.*;
 import jade.content.*;
 import jade.content.onto.basic.*;
-import jade.content.lang.*;
 import jade.content.lang.sl.*;
 import jade.core.*;
-import jade.core.behaviours.*;
-import jade.domain.*;
 import jade.domain.mobility.*;
 import jade.domain.JADEAgentManagement.*;
 import jade.gui.*;
