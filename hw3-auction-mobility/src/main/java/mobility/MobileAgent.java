@@ -2,6 +2,7 @@ package mobility;
 
 import agents.ArtistManagerAgent;
 import agents.CuratorAgent;
+import gui.ArtistManagerAgentGui;
 import gui.MobileAgentGui;
 import jade.core.*;
 import jade.core.behaviours.*;
@@ -50,7 +51,10 @@ public class MobileAgent extends GuiAgent {
 	   }
 	   else if (this instanceof ArtistManagerAgent)
 	   {
-		   System.out.println("Should show artist manager UI");
+		   // Show artist manager agent GUI
+		   myGui = new ArtistManagerAgentGui(this);
+		   myGui.setVisible(true);
+		   myGui.setLocation(destination.getName());
 	   }
 	   else
 	   {
