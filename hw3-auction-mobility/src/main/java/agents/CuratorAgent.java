@@ -95,6 +95,25 @@ public class CuratorAgent extends MobileAgent
         doDelete();
     }
 
+    protected void beforeMove() {
+// -----------------------------
+
+        super.beforeMove();
+    }
+
+    protected void afterMove() {
+// ----------------------------
+
+        super.afterMove();
+
+    }
+
+    protected void beforeClone() {
+// -----------------------------
+
+        super.beforeClone();
+    }
+
     protected void afterClone() {
 // ----------------------------
 
@@ -110,8 +129,14 @@ public class CuratorAgent extends MobileAgent
     private void registerCuratorServices()
     {
         ServiceDescription bidderService = new ServiceDescription();
-        bidderService.setName(ServiceList.SRVC_CURATOR_BIDDER_NAME);
-        bidderService.setType(ServiceList.SRVC_CURATOR_BIDDER_TYPE);
+
+        String serviceName = ServiceList.SRVC_CURATOR_BIDDER_NAME; // + "-" + destination.getName()
+        String serviceType = ServiceList.SRVC_CURATOR_BIDDER_TYPE;
+
+        System.out.println("Registering curator service at: " + serviceName);
+
+        bidderService.setName(serviceName);
+        bidderService.setType(serviceType);
 
         DFAgentDescription agentDescription = new DFAgentDescription();
         agentDescription.setName(getAID());
@@ -131,7 +156,7 @@ public class CuratorAgent extends MobileAgent
     {
         try
         {
-            DFService.deregister(this);
+            DFService.deregister(this, getAID());
         }
         catch (FIPAException fe)
         {

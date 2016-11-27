@@ -20,7 +20,7 @@ public class MobileAgent extends GuiAgent {
 // ----------------------------------------
 
    private AID controller;
-   private Location destination;
+   protected Location destination;
    transient protected MobileAgentGui myGui;
 
    protected void setup() {
