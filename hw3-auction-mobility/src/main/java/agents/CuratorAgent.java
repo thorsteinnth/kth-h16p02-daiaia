@@ -31,10 +31,13 @@ public class CuratorAgent extends MobileAgent
     private ArrayList<String> artistInterests;
     private BiddingStrategy biddingStrategy;
 
+    public String getStrategy()
+    {
+        return biddingStrategy.toString();
+    }
+
     protected void setup()
     {
-        super.setup();
-
         // Get command line arguments
         Object[] args = getArguments();
         if (args != null && args.length == 1)
@@ -64,6 +67,8 @@ public class CuratorAgent extends MobileAgent
             // default to all passive
             this.biddingStrategy = BiddingStrategy.PASSIVE;
         }
+
+        super.setup();
 
         registerCuratorServices();
         addBehaviour(new WaitForAuction());
