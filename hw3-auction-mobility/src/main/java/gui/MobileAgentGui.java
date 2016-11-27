@@ -27,7 +27,7 @@ public class MobileAgentGui extends JFrame {
       JPanel base = new JPanel();
       base.setBorder(new EmptyBorder(20,20,20,20));
       getContentPane().add(base);
-	   base.setLayout(new GridLayout(3,1));
+	   base.setLayout(new GridLayout(4,1));
 	   //base.setLayout(new BorderLayout(0,20));
 
 	   JPanel pane = new JPanel();
@@ -44,7 +44,7 @@ public class MobileAgentGui extends JFrame {
 	  info.setEditable(false);
 	  info.setHorizontalAlignment(JTextField.CENTER);
 
-	  setSize(200,100);
+	  setSize(200,200);
 	  pack();
 	  setResizable(false);
 	  Rectangle r = getGraphicsConfiguration().getBounds();
