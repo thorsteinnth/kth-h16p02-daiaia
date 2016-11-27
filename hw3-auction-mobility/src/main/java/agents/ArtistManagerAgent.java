@@ -103,12 +103,16 @@ public class ArtistManagerAgent extends MobileAgent
         {
             super(agent);
 
+            myGui.setInfo("");
+
             // Update bidder list
             getBidders();
             if (bidders.size() == 0)
             {
                 System.out.println(myAgent.getName()
                         + " - AuctionManagementBehaviour - there are no bidders, aborting");
+
+                myGui.setInfo("No bidders. Aborting auction.");
 
                 // Abort auction
                 return;
@@ -256,6 +260,7 @@ public class ArtistManagerAgent extends MobileAgent
                                 + " - Aborting auction."
                         );
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
+                        myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
                         return;
                     }
 
@@ -283,6 +288,7 @@ public class ArtistManagerAgent extends MobileAgent
                     {
                         System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
+                        myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
                     }
                 }
                 catch (IOException|UnreadableException ex)
@@ -293,6 +299,7 @@ public class ArtistManagerAgent extends MobileAgent
             else
             {
                 System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
+                myGui.setInfo("Auction success. Number of rounds: " + roundCount);
             }
         }
 
