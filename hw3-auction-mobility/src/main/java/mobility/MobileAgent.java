@@ -55,7 +55,7 @@ public class MobileAgent extends GuiAgent {
 	   else if (this instanceof ArtistManagerAgent)
 	   {
 		   // Show artist manager agent GUI
-		   myGui = new ArtistManagerAgentGui(this);
+		   myGui = new ArtistManagerAgentGui((ArtistManagerAgent)this);
 		   myGui.setVisible(true);
 		   myGui.setLocation(destination.getName());
 	   }

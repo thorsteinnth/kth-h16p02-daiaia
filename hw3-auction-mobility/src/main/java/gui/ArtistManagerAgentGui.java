@@ -1,6 +1,6 @@
 package gui;
 
-import mobility.MobileAgent;
+import agents.ArtistManagerAgent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,11 +9,13 @@ import java.awt.event.ActionListener;
 
 public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListener
 {
+    private ArtistManagerAgent agent;
     private JButton startAuction;
 
-    public ArtistManagerAgentGui(MobileAgent a)
+    public ArtistManagerAgentGui(ArtistManagerAgent a)
     {
         super(a);
+        this.agent = a;
 
         // Add button to start an auction
         Component[] components = getContentPane().getComponents();
@@ -32,7 +34,7 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
     {
         if (e.getSource() == startAuction)
         {
-            System.out.println("Should start a new auction");
+            this.agent.startAuction();
         }
     }
 }
