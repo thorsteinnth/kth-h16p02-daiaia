@@ -1,0 +1,38 @@
+group 'com.fmttsi.kth-h16-p02-daiaia'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile name: 'jade'
+    compile name: 'commons-codec-1.3'
+}
+
+jar {
+    archiveName='kth-h16p02-daiaia-hw3-auction-mobility.jar'
+
+    // Exclude stuff we don't need in the jar
+    exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF')
+
+    // Extract the dependency jars into the new one
+    from (zipTree('lib/jade.jar')) {
+        include '**/*.class'
+    }
+    from (zipTree('lib/commons-codec-1.3.jar')) {
+        include '**/*.class'
+    }
+
+    manifest {
+        attributes 'Main-Class': 'jade.Boot'
+    }
+}
