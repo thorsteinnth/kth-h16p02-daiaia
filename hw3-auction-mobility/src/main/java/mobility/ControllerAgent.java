@@ -25,7 +25,8 @@ public class ControllerAgent extends GuiAgent {
    private jade.wrapper.AgentContainer[] container = null;
    private Map locations = new HashMap();
    private Vector agents = new Vector();
-   private int agentCnt = 0;
+   private int agentCntArtistManager = 0;
+    private int agentCntCurator = 0;
    private int command;
    transient protected ControllerAgentGui myGui;
 
@@ -102,7 +103,7 @@ public class ControllerAgent extends GuiAgent {
          try {
             Object[] args = new Object[2];
             args[0] = getAID();
-            String name = "ArtistManagerAgent"+agentCnt++;
+            String name = "ArtistManagerAgent"+agentCntArtistManager++;
             a = home.createNewAgent(name, ArtistManagerAgent.class.getName(), args);
 	        a.start();
 	        agents.add(name);
@@ -119,7 +120,7 @@ public class ControllerAgent extends GuiAgent {
           try {
               Object[] args = new Object[2];
               args[0] = getAID();
-              String name = "CuratorAgent"+agentCnt++;
+              String name = "CuratorAgent"+agentCntCurator++;
               a = home.createNewAgent(name, CuratorAgent.class.getName(), args);
               a.start();
               agents.add(name);
