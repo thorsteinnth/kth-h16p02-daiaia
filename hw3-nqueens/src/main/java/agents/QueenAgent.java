@@ -64,7 +64,7 @@ public class QueenAgent extends Agent
         this.triedPositions = new ArrayList<>();
         this.position = new Point(0, this.id);
 
-        this.addBehaviour(new InitWakerBehaviour(this, 5000));
+        this.addBehaviour(new InitWakerBehaviour(this, 3000));
 
         System.out.println("QueenAgent " + getAID().getName() + " is ready. ID: " + this.id + " n: " + this.n);
     }
@@ -82,7 +82,7 @@ public class QueenAgent extends Agent
     {
         this.position = position;
         this.triedPositions.add(position);
-        System.out.println(getName() + " - Set position: " + this.position);
+        System.out.println(getName() + " - Set position: [" + this.position.x + "," + this.position.y + "]");
     }
 
     /**
@@ -365,17 +365,20 @@ public class QueenAgent extends Agent
                             }
                             else
                             {
-                                System.out.println(thisAgent.getName()
-                                        + " - Sending request to successor: " + thisAgent.successor.getName()
-                                );
+                                if (thisAgent.successor != null)
+                                {
+                                    System.out.println(thisAgent.getName()
+                                            + " - Sending request to successor: " + thisAgent.successor.getName()
+                                    );
 
-                                addBehaviour(
-                                        new SetPositionRequestSenderOneShotBehaviour(
-                                                thisAgent,
-                                                thisAgent.successor,
-                                                filledPositions
-                                        )
-                                );
+                                    addBehaviour(
+                                            new SetPositionRequestSenderOneShotBehaviour(
+                                                    thisAgent,
+                                                    thisAgent.successor,
+                                                    filledPositions
+                                            )
+                                    );
+                                }
                             }
                         }
                         else
@@ -384,17 +387,20 @@ public class QueenAgent extends Agent
                             // send message to predecessor, asking him to update his position
                             triedPositions.clear();
 
-                            System.out.println(thisAgent.getName()
-                                    + " - Sending request to predecessor: " + thisAgent.predecessor.getName()
-                            );
+                            if (thisAgent.predecessor != null)
+                            {
+                                System.out.println(thisAgent.getName()
+                                        + " - Sending request to predecessor: " + thisAgent.predecessor.getName()
+                                );
 
-                            addBehaviour(
-                                    new SetPositionRequestSenderOneShotBehaviour(
-                                            thisAgent,
-                                            thisAgent.predecessor,
-                                            filledPositions
-                                    )
-                            );
+                                addBehaviour(
+                                        new SetPositionRequestSenderOneShotBehaviour(
+                                                thisAgent,
+                                                thisAgent.predecessor,
+                                                filledPositions
+                                        )
+                                );
+                            }
                         }
                     }
                 }
