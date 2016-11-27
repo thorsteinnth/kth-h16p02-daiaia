@@ -45,6 +45,8 @@ public class MobileAgent extends GuiAgent {
 	  getContentManager().registerLanguage(new SLCodec());
 	  getContentManager().registerOntology(MobilityOntology.getInstance());
 
+	   // Create and display the gui
+
 	   if (this instanceof CuratorAgent)
 	   {
 		   System.out.println("Should show curator UI");
@@ -56,7 +58,6 @@ public class MobileAgent extends GuiAgent {
 	   else
 	   {
 		   // Show generic mobile agent UI
-		   // Create and display the gui
 		   myGui = new MobileAgentGui(this);
 		   myGui.setVisible(true);
 		   myGui.setLocation(destination.getName());
