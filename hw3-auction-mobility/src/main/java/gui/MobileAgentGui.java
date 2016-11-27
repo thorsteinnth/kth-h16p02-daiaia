@@ -23,18 +23,24 @@ public class MobileAgentGui extends JFrame {
 
 	  // Add button and text field
       Container c = getContentPane();
+
       JPanel base = new JPanel();
       base.setBorder(new EmptyBorder(20,20,20,20));
       getContentPane().add(base);
-	  base.setLayout(new BorderLayout(0,20));
-	  JPanel pane = new JPanel();
+	   base.setLayout(new GridLayout(3,1));
+	   //base.setLayout(new BorderLayout(0,20));
+
+	   JPanel pane = new JPanel();
 	  pane.setLayout(new BorderLayout(10,0));
 	  pane.add(new JLabel("Current location : "), BorderLayout.WEST);
 	  pane.add(location = new JTextField(15), BorderLayout.EAST);
 	  location.setEditable(false);
 	  location.setBackground(Color.white);
-	  base.add(pane, BorderLayout.NORTH);
-	  base.add(info = new JTextField(20), BorderLayout.SOUTH);
+	  //base.add(pane, BorderLayout.NORTH);
+	   base.add(pane);
+
+	  //base.add(info = new JTextField(20), BorderLayout.SOUTH);
+	   base.add(info = new JTextField(20));
 	  info.setEditable(false);
 	  info.setHorizontalAlignment(JTextField.CENTER);
 
