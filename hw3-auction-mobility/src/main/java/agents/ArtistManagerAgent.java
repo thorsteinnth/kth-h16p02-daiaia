@@ -71,6 +71,11 @@ public class ArtistManagerAgent extends MobileAgent
         System.out.println("ArtistManagerAgent " + getAID().getName() + " terminating.");
     }
 
+    private boolean isClone()
+    {
+        return !this.getAID().equals(this.originalParent);
+    }
+
     public void startAuction()
     {
         System.out.println(this.getName() + " - Starting auction");
