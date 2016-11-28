@@ -38,6 +38,7 @@ public class ArtistManagerAgent extends MobileAgent
     private ArrayList<AID> clones;
     private Painting paintingToAuction;
     private AID originalParent;
+    private Location originalParentLocation;
 
     private ACLMessage auctionWinningBid;
 
@@ -52,6 +53,7 @@ public class ArtistManagerAgent extends MobileAgent
         this.paintingToAuction = getRandomPainting();
         // Set ourselves as the parent, our clones will have access to this field
         this.originalParent = getAID();
+        this.originalParentLocation = here();
 
         // Bidder service template
         this.bidderServiceTemplate = new DFAgentDescription();
@@ -99,9 +101,16 @@ public class ArtistManagerAgent extends MobileAgent
         }
     }
 
-    public void moveAgentToOriginalContainerAndReportWinningBid()
+    public void moveCloneToOriginalContainerAndReportAuctionResult()
     {
-        // TODO : move agent first to original container
+        if(here() != this.originalParentLocation)
+        {
+            // the clone is not in the same location as it's original parent
+            // lets move it there before it can report its auction result
+            myGui.setInfo("Moving to original container and reporting auction result");
+            doMove(this.originalParentLocation);
+        }
+
         addBehaviour(new ReportAuctionResultOneShot());
     }
 
@@ -361,7 +370,7 @@ public class ArtistManagerAgent extends MobileAgent
                         );
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
-                        moveAgentToOriginalContainerAndReportWinningBid();
+                        moveCloneToOriginalContainerAndReportAuctionResult();
                         return;
                     }
 
@@ -391,7 +400,7 @@ public class ArtistManagerAgent extends MobileAgent
                         System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
-                        moveAgentToOriginalContainerAndReportWinningBid();
+                        moveCloneToOriginalContainerAndReportAuctionResult();
                     }
                 }
                 catch (IOException|UnreadableException ex)
@@ -407,7 +416,7 @@ public class ArtistManagerAgent extends MobileAgent
                 int bidAmount = Integer.parseInt(auctionWinningBid.getContent());
                 System.out.println(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
                 myGui.setInfo(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
-                moveAgentToOriginalContainerAndReportWinningBid();
+                moveCloneToOriginalContainerAndReportAuctionResult();
             }
         }
 
