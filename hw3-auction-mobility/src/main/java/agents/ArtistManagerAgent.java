@@ -18,7 +18,10 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
+import jade.domain.JADEAgentManagement.QueryPlatformLocationsAction;
 import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.domain.mobility.CloneAction;
+import jade.domain.mobility.MobileAgentDescription;
 import jade.domain.mobility.MobilityOntology;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -28,6 +31,7 @@ import mobility.MobileAgent;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -807,6 +811,9 @@ public class ArtistManagerAgent extends MobileAgent
             // Disable the "start auction in clones" button for clones
             ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
 
+            // Disable the "set up other agents" button for clones
+            ((ArtistManagerAgentGui) myGui).setSetupOtherAgentsButtonEnabled(false);
+
             // wait for start auction
             addBehaviour(new WaitForStartAuctionRequest());
         }
@@ -826,6 +833,97 @@ public class ArtistManagerAgent extends MobileAgent
 
             // Disable the "start auction in clones" button for clones
             ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
+
+            // Disable the "set up other agents" button for clones
+            ((ArtistManagerAgentGui) myGui).setSetupOtherAgentsButtonEnabled(false);
         }
     }
+
+    //region Set up other agents - clone and move automation
+
+    public void setupOtherAgents()
+    {
+        System.out.println(getName() + " - Setting up other agents");
+
+        final String CURATOR_AGENT_NAME = "CuratorAgent";
+        final String ARTISTMANAGER_AGENT_NAME = "ArtistManagerAgent";
+
+        HashMap<String, Location> locations = getAvailableLocationsFromAMS();
+        Location container2 = locations.get("Container-2");
+        Location container3 = locations.get("Container-3");
+
+        // Clone myself twice, to container 2 and 3
+        cloneSelf(getCloneName(ARTISTMANAGER_AGENT_NAME, 0), container2);
+        cloneSelf(getCloneName(ARTISTMANAGER_AGENT_NAME, 1), container3);
+
+        // TODO Update controller agent GUI
+    }
+
+    private void cloneSelf(String newName, Location destination)
+    {
+        MobileAgentDescription mad = new MobileAgentDescription();
+        mad.setName(getAID());
+        mad.setDestination(destination);
+        CloneAction ca = new CloneAction();
+        ca.setNewName(newName);
+        ca.setMobileAgentDescription(mad);
+        sendMobilityRequest(new Action(getAID(), ca));
+    }
+
+    private HashMap<String, Location> getAvailableLocationsFromAMS()
+    {
+        HashMap<String, Location> locationsMap = new HashMap<>();
+
+        // Send request to AMS
+        sendMobilityRequest(new Action(getAMS(), new QueryPlatformLocationsAction()));
+
+        // Receive response from AMS
+        MessageTemplate mt = MessageTemplate.and(
+                MessageTemplate.MatchSender(getAMS()),
+                MessageTemplate.MatchPerformative(ACLMessage.INFORM));
+        ACLMessage resp = blockingReceive(mt);
+
+        try
+        {
+            ContentElement ce = getContentManager().extractContent(resp);
+            Result result = (Result) ce;
+            jade.util.leap.Iterator it = result.getItems().iterator();
+            while (it.hasNext())
+            {
+                Location loc = (Location)it.next();
+                locationsMap.put(loc.getName(), loc);
+            }
+        }
+        catch (Codec.CodecException|OntologyException ex)
+        {
+            System.err.println(ex);
+        }
+
+        return locationsMap;
+    }
+
+    private void sendMobilityRequest(Action action)
+    {
+        ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
+        request.setLanguage(new SLCodec().getName());
+        request.setOntology(MobilityOntology.getInstance().getName());
+        request.setConversationId("artistmanageragent-setup-other-agents");
+        try
+        {
+            getContentManager().fillContent(request, action);
+            request.addReceiver(action.getActor());
+            send(request);
+        }
+        catch (Exception ex)
+        {
+            System.err.println(ex);
+        }
+    }
+
+    private String getCloneName(String agentTypeName, int cloneNumber)
+    {
+        return "Clone-" + agentTypeName + "-" + cloneNumber;
+    }
+
+    //endregion
 }

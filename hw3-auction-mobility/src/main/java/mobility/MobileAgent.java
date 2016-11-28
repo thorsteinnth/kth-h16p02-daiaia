@@ -111,7 +111,12 @@ public class MobileAgent extends GuiAgent {
 
 	  public void action() {
 
-		 ACLMessage msg = receive(MessageTemplate.MatchSender(controller));
+		 ACLMessage msg = receive(
+				 MessageTemplate.or(
+						 MessageTemplate.MatchSender(controller),
+						 MessageTemplate.MatchConversationId("artistmanageragent-setup-other-agents")
+				 )
+		 );
 
 		 if (msg == null) { block(); return; }
 
