@@ -108,7 +108,9 @@ public class ArtistManagerAgent extends MobileAgent
             // the clone is not in the same location as it's original parent
             // lets move it there before it can report its auction result
             myGui.setInfo("Moving to original container and reporting auction result");
-            doMove(this.originalParentLocation);
+
+            System.out.println("Moving to parent location: " + this.originalParentLocation.toString());
+            doMove(destination = this.originalParentLocation);
         }
 
         addBehaviour(new ReportAuctionResultOneShot());
@@ -265,7 +267,7 @@ public class ArtistManagerAgent extends MobileAgent
                 else
                 {
                     System.out.println("Got no acceptable bids");
-                    reportMsg.setContentObject("auction-failed");
+                    reportMsg.setContent("auction-failed");
                 }
 
                 reportMsg.setContentObject(auctionWinningBid);
