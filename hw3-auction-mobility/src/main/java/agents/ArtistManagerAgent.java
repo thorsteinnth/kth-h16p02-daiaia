@@ -557,13 +557,11 @@ public class ArtistManagerAgent extends MobileAgent
             {
                 try
                 {
-                    Object auctionResult = msg.getContentObject();
-
-                    if (auctionResult instanceof ACLMessage)
+                    if (msg.getContentObject() instanceof ACLMessage)
                     {
                         // This is a winning PROPOSE message
 
-                        ACLMessage winningBid = (ACLMessage)auctionResult;
+                        ACLMessage winningBid = (ACLMessage)msg.getContentObject();
 
                         System.out.println(myAgent.getName()
                                 + " - Received winning bid message from clone " + msg.getSender().getName()
@@ -573,20 +571,18 @@ public class ArtistManagerAgent extends MobileAgent
                         // Save the winning bid
                         this.winningBids.add(winningBid);
                     }
-                    else if (auctionResult instanceof String)
+                    else if (msg.getContent().equals("auction-failed"))
                     {
                         // This is an auction failed message
 
-                        String auctionFailedMessage = (String)auctionResult;
-
                         System.out.println(myAgent.getName()
                                 + " - Received auction failed message from clone " + msg.getSender().getName()
-                                + " - " + auctionFailedMessage
+                                + " - " + msg.getContent()
                         );
                     }
                     else
                     {
-                        System.out.println(myAgent.getName() + " - Unknown auction result object type: " + auctionResult);
+                        System.out.println(myAgent.getName() + " - Unknown auction result - " + msg);
                     }
 
                     // Remove the sender from our list of clones that have yet to send us their auction result
