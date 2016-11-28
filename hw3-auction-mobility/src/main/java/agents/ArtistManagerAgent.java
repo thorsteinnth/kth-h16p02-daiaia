@@ -435,6 +435,107 @@ public class ArtistManagerAgent extends MobileAgent
         }
     }
 
+    private class GetWinningBidsFromClonesCyclicBehaviour extends CyclicBehaviour
+    {
+        private ArrayList<AID> clonesYetToSendTheirWinningBid;
+        private ArrayList<ACLMessage> winningBids;
+
+        public GetWinningBidsFromClonesCyclicBehaviour(ArtistManagerAgent a, ArrayList<AID> clonesYetToSendTheirWinningBid)
+        {
+            super(a);
+            this.clonesYetToSendTheirWinningBid = clonesYetToSendTheirWinningBid;
+            this.winningBids = new ArrayList<>();
+        }
+
+        @Override
+        public void action()
+        {
+            MessageTemplate mt = MessageTemplate.and(
+                    MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+                    MessageTemplate.MatchConversationId("auction-" + paintingToAuction.getName() + "-winningbid")
+            );
+            ACLMessage msg = this.myAgent.receive(mt);
+
+            if (msg != null)
+            {
+                try
+                {
+                    ACLMessage winningBid = (ACLMessage) msg.getContentObject();
+                    System.out.println(myAgent.getName()
+                            + " - Received winning bid message from " + msg.getSender().getName()
+                            + " - [winner, bid] - [" + winningBid.getSender().getName() + ", " + winningBid.getContent() + "]"
+                    );
+
+                    // Save the winning bid
+                    this.winningBids.add(winningBid);
+
+                    // Remove the sender from our list of clones that have yet to send us their winning bid
+                    this.clonesYetToSendTheirWinningBid.remove(msg.getSender());
+
+                    if (this.clonesYetToSendTheirWinningBid.isEmpty())
+                    {
+                        selectBestWinningBidAndProcessIt();
+
+                        // We have received all messages that we are expecting, remove this cyclic behaviour from agent
+                        myAgent.removeBehaviour(this);
+                    }
+                }
+                catch (UnreadableException ex)
+                {
+                    System.err.println(ex);
+                }
+            }
+            else
+            {
+                block();
+            }
+        }
+
+        private void selectBestWinningBidAndProcessIt()
+        {
+            int highestBid = -1;
+            ACLMessage bestWinningBid = null;
+
+            for (ACLMessage winningBid : this.winningBids)
+            {
+                try
+                {
+                    int bid = Integer.parseInt(winningBid.getContent());
+                    if (bid > highestBid)
+                    {
+                        highestBid = bid;
+                        bestWinningBid = winningBid;
+                    }
+                }
+                catch (NumberFormatException ex)
+                {
+                    System.err.println(ex);
+                }
+            }
+
+            if (bestWinningBid != null)
+            {
+                System.out.println(myAgent.getName()
+                        + " - Best winning bid from clones  - [winner, bid] - ["
+                        + bestWinningBid.getSender().getName() + ", " + bestWinningBid.getContent() + "]");
+
+                acceptBestWinningBid(bestWinningBid);
+            }
+            else
+            {
+                System.out.println(myAgent.getName() + " - Could not find best winning bid from clones");
+            }
+        }
+
+        private void acceptBestWinningBid(ACLMessage bestWinningBid)
+        {
+            // Send ACCEPT_PROPOSAL to the winner
+            ACLMessage reply = bestWinningBid.createReply();
+            reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+            myAgent.send(reply);
+        }
+    }
+
     //endregion
 
     private int getInitialAskingPrice(Painting painting)
