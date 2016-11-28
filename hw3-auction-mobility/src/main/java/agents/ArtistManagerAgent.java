@@ -552,7 +552,7 @@ public class ArtistManagerAgent extends MobileAgent
         {
             MessageTemplate mt = MessageTemplate.and(
                     MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-                    MessageTemplate.and(
+                    MessageTemplate.or(
                             MessageTemplate.MatchConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-success"),
                             MessageTemplate.MatchConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-failure")
                     )
