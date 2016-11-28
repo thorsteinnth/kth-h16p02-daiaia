@@ -103,7 +103,7 @@ public class ArtistManagerAgent extends MobileAgent
 
     public void moveCloneToOriginalContainerAndReportAuctionResult()
     {
-        if(here() != this.originalParentLocation)
+        if (here() != this.originalParentLocation)
         {
             // the clone is not in the same location as it's original parent
             // lets move it there before it can report its auction result
@@ -189,6 +189,7 @@ public class ArtistManagerAgent extends MobileAgent
                         + " - AuctionManagementBehaviour - there are no bidders (in same container), aborting");
 
                 myGui.setInfo("No bidders. Aborting auction.");
+                moveCloneToOriginalContainerAndReportAuctionResult();
 
                 // Abort auction
                 return;
@@ -254,12 +255,12 @@ public class ArtistManagerAgent extends MobileAgent
         {
             try
             {
-                System.out.println(myAgent.getLocalName() + "reporting auction result");
+                System.out.println(myAgent.getLocalName() + " - Reporting auction result");
 
                 ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
                 reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult");
 
-                if(auctionWinningBid != null)
+                if (auctionWinningBid != null)
                 {
                     System.out.println("Winning bid is: " + auctionWinningBid.getContent().toString());
                     reportMsg.setContentObject(auctionWinningBid);
@@ -270,7 +271,6 @@ public class ArtistManagerAgent extends MobileAgent
                     reportMsg.setContent("auction-failed");
                 }
 
-                reportMsg.setContentObject(auctionWinningBid);
                 reportMsg.addReceiver(originalParent);
                 myAgent.send(reportMsg);
             }
@@ -559,7 +559,7 @@ public class ArtistManagerAgent extends MobileAgent
             {
                 try
                 {
-                    if (msg.getContentObject() instanceof ACLMessage)
+                    if (msg.getContentObject() != null && msg.getContentObject() instanceof ACLMessage)
                     {
                         // This is a winning PROPOSE message
 
@@ -804,6 +804,23 @@ public class ArtistManagerAgent extends MobileAgent
 
             // wait for start auction
             addBehaviour(new WaitForStartAuctionRequest());
+        }
+    }
+
+    @Override
+    protected void afterMove()
+    {
+        super.afterMove();
+
+        // Have to re-hide the appropriate buttons since the GUI resets when you move an agent
+        if (isClone())
+        {
+            // Disable the "start auction" button for clones
+            // (they will start the auction when they receive a message from the original parent telling them to do so)
+            ((ArtistManagerAgentGui) myGui).setStartAuctionButtonEnabled(false);
+
+            // Disable the "start auction in clones" button for clones
+            ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
         }
     }
 }

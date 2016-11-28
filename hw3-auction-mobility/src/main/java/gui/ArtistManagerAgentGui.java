@@ -11,7 +11,6 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
 {
     private ArtistManagerAgent agent;
     private JButton startAuction;
-    private JButton reportWinningBid;
     private JButton startAuctionInClones;
 
     public ArtistManagerAgentGui(ArtistManagerAgent a)
