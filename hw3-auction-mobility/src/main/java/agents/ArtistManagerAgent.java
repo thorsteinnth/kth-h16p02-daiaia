@@ -71,7 +71,7 @@ public class ArtistManagerAgent extends MobileAgent
         System.out.println("ArtistManagerAgent " + getAID().getName() + " terminating.");
     }
 
-    private boolean isClone()
+    public boolean isClone()
     {
         return !this.getAID().equals(this.originalParent);
     }
@@ -83,6 +83,11 @@ public class ArtistManagerAgent extends MobileAgent
         ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
         this.auctionWinningBid = null;
         this.addBehaviour(new AuctionManagementBehaviour(this));
+    }
+
+    public void startAuctionInClones()
+    {
+        System.out.println(getName() + " - SHOULD START AUCTION IN CLONES");
     }
 
     public void reportWinningBid()
@@ -717,11 +722,15 @@ public class ArtistManagerAgent extends MobileAgent
         clones.clear();
         System.out.println(getName() + " - AFTER clone - Original parent: " + originalParent + " - Painting: " + paintingToAuction);
 
-        // Disable the start auction button for clones
-        // they will start the auction when they receive a message from the original parent telling them to do so
         if (isClone())
         {
-            ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
+            // Disable the "start auction" button for clones
+            // (they will start the auction when they receive a message from the original parent telling them to do so)
+            ((ArtistManagerAgentGui) myGui).setStartAuctionButtonEnabled(false);
+
+            // Disable the "start auction in clones" button for clones
+            ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
+
             addBehaviour(new WaitForStartAuctionRequest());
         }
     }

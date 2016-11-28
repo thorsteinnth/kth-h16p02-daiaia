@@ -12,6 +12,7 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
     private ArtistManagerAgent agent;
     private JButton startAuction;
     private JButton reportWinningBid;
+    private JButton startAuctionInClones;
 
     public ArtistManagerAgentGui(ArtistManagerAgent a)
     {
@@ -28,6 +29,13 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
         startAuction.setToolTipText("Start a new auction");
         startAuction.addActionListener(this);
         base.add(startAuctionPane);
+
+        JPanel startAuctionInClonesPane = new JPanel();
+        startAuctionInClonesPane.setLayout(new BorderLayout(10,0));
+        startAuctionInClonesPane.add(startAuctionInClones = new JButton("Start auction in clones"));
+        startAuctionInClones.setToolTipText("Start auction in clones");
+        startAuctionInClones.addActionListener(this);
+        base.add(startAuctionInClonesPane);
 
         JPanel reportWinningBidPane = new JPanel();
         reportWinningBidPane.setLayout(new BorderLayout(10,0));
@@ -49,6 +57,10 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
         {
             this.agent.reportWinningBid();
         }
+        else if (e.getSource() == startAuctionInClones)
+        {
+            this.agent.startAuctionInClones();
+        }
     }
 
     public void setReportWinningButtonEnabled(boolean enabled)
@@ -59,5 +71,10 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
     public void setStartAuctionButtonEnabled(boolean enabled)
     {
         this.startAuction.setEnabled(enabled);
+    }
+
+    public void setStartAuctionInClonesButtonEnabled(boolean enabled)
+    {
+        this.startAuctionInClones.setEnabled(enabled);
     }
 }

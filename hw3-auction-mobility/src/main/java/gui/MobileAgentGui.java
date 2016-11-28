@@ -27,7 +27,7 @@ public class MobileAgentGui extends JFrame {
       JPanel base = new JPanel();
       base.setBorder(new EmptyBorder(20,20,20,20));
       getContentPane().add(base);
-	   base.setLayout(new GridLayout(4,1));
+	   base.setLayout(new GridLayout(5,1));
 	   //base.setLayout(new BorderLayout(0,20));
 
 	   JPanel pane = new JPanel();
