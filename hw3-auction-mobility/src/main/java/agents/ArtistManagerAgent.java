@@ -258,16 +258,17 @@ public class ArtistManagerAgent extends MobileAgent
                 System.out.println(myAgent.getLocalName() + " - Reporting auction result");
 
                 ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
-                reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult");
 
                 if (auctionWinningBid != null)
                 {
                     System.out.println("Winning bid is: " + auctionWinningBid.getContent().toString());
+                    reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-success");
                     reportMsg.setContentObject(auctionWinningBid);
                 }
                 else
                 {
                     System.out.println("Got no acceptable bids");
+                    reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-failure");
                     reportMsg.setContent("auction-failed");
                 }
 
