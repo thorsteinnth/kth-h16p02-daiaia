@@ -87,7 +87,17 @@ public class ArtistManagerAgent extends MobileAgent
 
     public void startAuctionInClones()
     {
-        System.out.println(getName() + " - SHOULD START AUCTION IN CLONES");
+        if (clones.size() > 0)
+        {
+            System.out.println(getName() + " - Sending \"start auction\" message to clones");
+            addBehaviour(new StartAuctionInClonesBehaviour(this));
+            System.out.println(getName() + " - Listening for winning bids from clones");
+            addBehaviour(new GetWinningBidsFromClonesCyclicBehaviour(this, clones));
+        }
+        else
+        {
+            System.out.println(getName() + " - There are no clones. Aborting start auction in clones.");
+        }
     }
 
     public void reportWinningBid()
@@ -483,6 +493,28 @@ public class ArtistManagerAgent extends MobileAgent
             }
 
             return acceptableBids;
+        }
+    }
+
+    private class StartAuctionInClonesBehaviour extends OneShotBehaviour
+    {
+        private ArtistManagerAgent agent;
+
+        public StartAuctionInClonesBehaviour(ArtistManagerAgent a)
+        {
+            super(a);
+            this.agent = a;
+        }
+
+        @Override
+        public void action()
+        {
+            ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+            inform.setConversationId("start-auction-" + paintingToAuction.getName());
+            for (AID clone : clones)
+                inform.addReceiver(clone);
+
+            myAgent.send(inform);
         }
     }
 
