@@ -38,6 +38,8 @@ public class ArtistManagerAgent extends MobileAgent
     private Painting paintingToAuction;
     private AID originalParent;
 
+    private ACLMessage auctionWinningBid;
+
     protected void setup()
     {
         // NOTE: This gets run only in the original agent, not the clones
@@ -249,9 +251,13 @@ public class ArtistManagerAgent extends MobileAgent
 
             if (winningBid != null)
             {
+                auctionWinningBid = winningBid;
+
+                /*
                 ACLMessage reply = winningBid.createReply();
                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                 acceptances.add(reply);
+                */
             }
 
             // Send reject proposal messages to all other bidders
@@ -332,6 +338,10 @@ public class ArtistManagerAgent extends MobileAgent
             {
                 System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                 myGui.setInfo("Auction success. Number of rounds: " + roundCount);
+
+                int bidAmount = Integer.parseInt(auctionWinningBid.getContent());
+                System.out.println(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
+                myGui.setInfo(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
             }
         }
 
