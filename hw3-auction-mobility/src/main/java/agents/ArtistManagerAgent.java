@@ -2,6 +2,7 @@ package agents;
 
 import DTOs.BidRequestDTO;
 import artifacts.Painting;
+import gui.ArtistManagerAgentGui;
 import jade.content.ContentElement;
 import jade.content.lang.Codec;
 import jade.content.lang.sl.SLCodec;
@@ -35,6 +36,7 @@ public class ArtistManagerAgent extends MobileAgent
     private DFAgentDescription bidderServiceTemplate;
     private ArrayList<AID> biddersInSameContainer;
 
+    private Painting painting;
     private ACLMessage auctionWinningBid;
 
     protected void setup()
@@ -64,7 +66,35 @@ public class ArtistManagerAgent extends MobileAgent
     public void startAuction()
     {
         System.out.println(this.getName() + " - Starting auction");
+        ((ArtistManagerAgentGui)myGui).setReportWinningButtonEnabled(false);
+        ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
         this.addBehaviour(new AuctionManagementBehaviour(this));
+    }
+
+    public void reportWinningBid()
+    {
+        if(this.auctionWinningBid != null)
+        {
+            System.out.println("Reporting winning bid: " + this.auctionWinningBid.toString());
+            ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
+
+            try
+            {
+                ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
+                reportMsg.setConversationId("auction-" + painting.getName() + "-winningbid");
+                reportMsg.setContentObject(this.auctionWinningBid);
+                reportMsg.addReceiver(this.originalParent);
+                myAgent.send(reportMsg);
+            }
+            catch (Exception ex)
+            {
+                ex.printStackTrace();
+            }
+        }
+        else
+        {
+            System.out.println("No winning bid found!");
+        }
     }
 
     private void getBiddersInSameContainer()
@@ -146,7 +176,7 @@ public class ArtistManagerAgent extends MobileAgent
             }
 
             // Get painting to auction off
-            Painting painting = getRandomPainting();
+            painting = getRandomPainting();
             System.out.println(myAgent.getName() + " - Auctioning off painting: " + painting);
 
             // Inform bidders that there is an auction starting
@@ -245,12 +275,6 @@ public class ArtistManagerAgent extends MobileAgent
             if (winningBid != null)
             {
                 auctionWinningBid = winningBid;
-
-                /*
-                ACLMessage reply = winningBid.createReply();
-                reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                acceptances.add(reply);
-                */
             }
 
             // Send reject proposal messages to all other bidders
@@ -292,6 +316,7 @@ public class ArtistManagerAgent extends MobileAgent
                         );
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
+                        ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
                         return;
                     }
 
@@ -317,6 +342,8 @@ public class ArtistManagerAgent extends MobileAgent
                     }
                     else
                     {
+                        // auction failure
+                        ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
                         System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
@@ -335,6 +362,7 @@ public class ArtistManagerAgent extends MobileAgent
                 int bidAmount = Integer.parseInt(auctionWinningBid.getContent());
                 System.out.println(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
                 myGui.setInfo(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
+                ((ArtistManagerAgentGui)myGui).setReportWinningButtonEnabled(true);
             }
         }
 
