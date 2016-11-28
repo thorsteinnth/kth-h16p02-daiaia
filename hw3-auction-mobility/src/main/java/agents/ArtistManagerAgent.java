@@ -108,6 +108,8 @@ public class ArtistManagerAgent extends MobileAgent
             // the clone is not in the same location as it's original parent
             // lets move it there before it can report its auction result
             myGui.setInfo("Moving to original container and reporting auction result");
+
+            System.out.println("Moving to parent location: " + this.originalParentLocation.toString());
             doMove(this.originalParentLocation);
         }
 
