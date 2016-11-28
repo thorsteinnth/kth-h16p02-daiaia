@@ -636,6 +636,7 @@ public class ArtistManagerAgent extends MobileAgent
             if (msg != null)
             {
                 startAuction();
+                myAgent.removeBehaviour(this);
             }
             else
             {
@@ -763,6 +764,7 @@ public class ArtistManagerAgent extends MobileAgent
             // Disable the "start auction in clones" button for clones
             ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
 
+            // wait for start auction
             addBehaviour(new WaitForStartAuctionRequest());
         }
     }
