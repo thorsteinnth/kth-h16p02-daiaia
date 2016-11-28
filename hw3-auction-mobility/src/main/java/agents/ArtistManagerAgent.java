@@ -250,7 +250,7 @@ public class ArtistManagerAgent extends MobileAgent
         {
             try
             {
-                System.out.println("Reporting winning bid: " + auctionWinningBid.toString());
+                System.out.println("Reporting winning bid: " + auctionWinningBid.getContent().toString());
 
                 ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
                 reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-winningbid");
