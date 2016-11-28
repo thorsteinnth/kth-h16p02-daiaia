@@ -76,6 +76,7 @@ public class ArtistManagerAgent extends MobileAgent
         System.out.println(this.getName() + " - Starting auction");
         ((ArtistManagerAgentGui)myGui).setReportWinningButtonEnabled(false);
         ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
+        this.auctionWinningBid = null;
         this.addBehaviour(new AuctionManagementBehaviour(this));
     }
 
