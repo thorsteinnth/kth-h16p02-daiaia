@@ -79,7 +79,6 @@ public class ArtistManagerAgent extends MobileAgent
     public void startAuction()
     {
         System.out.println(this.getName() + " - Starting auction");
-        ((ArtistManagerAgentGui)myGui).setReportWinningButtonEnabled(false);
         ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
         this.auctionWinningBid = null;
         this.addBehaviour(new AuctionManagementBehaviour(this));
@@ -100,16 +99,10 @@ public class ArtistManagerAgent extends MobileAgent
         }
     }
 
-    public void reportWinningBid()
+    public void moveAgentToOriginalContainerAndReportWinningBid()
     {
-        if(this.auctionWinningBid != null)
-        {
-            addBehaviour(new ReportWinningBidOneShot());
-        }
-        else
-        {
-            System.out.println("No winning bid found!");
-        }
+        // TODO : move agent first to original container
+        addBehaviour(new ReportAuctionResultOneShot());
     }
 
     private void getBiddersInSameContainer()
@@ -238,9 +231,9 @@ public class ArtistManagerAgent extends MobileAgent
         }
     }
 
-    private class ReportWinningBidOneShot extends OneShotBehaviour
+    private class ReportAuctionResultOneShot extends OneShotBehaviour
     {
-        public ReportWinningBidOneShot()
+        public ReportAuctionResultOneShot()
         {
             super();
         }
@@ -250,10 +243,22 @@ public class ArtistManagerAgent extends MobileAgent
         {
             try
             {
-                System.out.println("Reporting winning bid: " + auctionWinningBid.getContent().toString());
+                System.out.println(myAgent.getLocalName() + "reporting auction result");
 
                 ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
-                reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-winningbid");
+                reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult");
+
+                if(auctionWinningBid != null)
+                {
+                    System.out.println("Winning bid is: " + auctionWinningBid.getContent().toString());
+                    reportMsg.setContentObject(auctionWinningBid);
+                }
+                else
+                {
+                    System.out.println("Got no acceptable bids");
+                    reportMsg.setContentObject("auction-failed");
+                }
+
                 reportMsg.setContentObject(auctionWinningBid);
                 reportMsg.addReceiver(originalParent);
                 myAgent.send(reportMsg);
@@ -356,6 +361,7 @@ public class ArtistManagerAgent extends MobileAgent
                         );
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
+                        moveAgentToOriginalContainerAndReportWinningBid();
                         return;
                     }
 
@@ -385,6 +391,7 @@ public class ArtistManagerAgent extends MobileAgent
                         System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
+                        moveAgentToOriginalContainerAndReportWinningBid();
                     }
                 }
                 catch (IOException|UnreadableException ex)
@@ -400,7 +407,7 @@ public class ArtistManagerAgent extends MobileAgent
                 int bidAmount = Integer.parseInt(auctionWinningBid.getContent());
                 System.out.println(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
                 myGui.setInfo(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
-                ((ArtistManagerAgentGui)myGui).setReportWinningButtonEnabled(true);
+                moveAgentToOriginalContainerAndReportWinningBid();
             }
         }
 
