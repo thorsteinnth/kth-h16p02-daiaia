@@ -256,6 +256,7 @@ public class ArtistManagerAgent extends MobileAgent
                 reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-winningbid");
                 reportMsg.setContentObject(auctionWinningBid);
                 reportMsg.addReceiver(originalParent);
+                myAgent.send(reportMsg);
             }
             catch (Exception ex)
             {
