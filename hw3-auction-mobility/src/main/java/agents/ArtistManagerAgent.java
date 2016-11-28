@@ -331,6 +331,10 @@ public class ArtistManagerAgent extends MobileAgent
             {
                 System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                 myGui.setInfo("Auction success. Number of rounds: " + roundCount);
+
+                int bidAmount = Integer.parseInt(auctionWinningBid.getContent());
+                System.out.println(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
+                myGui.setInfo(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
             }
         }
 
