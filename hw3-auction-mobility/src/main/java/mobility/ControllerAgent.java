@@ -23,7 +23,10 @@ public class ControllerAgent extends GuiAgent {
    private Map locations = new HashMap();
    private Vector agents = new Vector();
    private int agentCntArtistManager = 0;
-    private int agentCntCurator = 0;
+   private int agentCntCurator = 0;
+   private int agentCloneCntArtistManager = 0;
+   private int agentCloneCntCurator = 0;
+
    private int command;
    transient protected ControllerAgentGui myGui;
 
@@ -33,6 +36,9 @@ public class ControllerAgent extends GuiAgent {
    public static final int MOVE_AGENT = 3;
    public static final int CLONE_AGENT = 4;
    public static final int KILL_AGENT = 5;
+
+   private static final String CURATOR_AGENT_NAME = "CuratorAgent";
+   private static final String ARTISTMANAGER_AGENT_NAME = "ArtistManagerAgent";
 
    // Get a JADE Runtime instance
    jade.core.Runtime runtime = jade.core.Runtime.instance();
@@ -100,7 +106,7 @@ public class ControllerAgent extends GuiAgent {
          try {
             Object[] args = new Object[2];
             args[0] = getAID();
-            String name = "ArtistManagerAgent"+agentCntArtistManager++;
+            String name = ARTISTMANAGER_AGENT_NAME+agentCntArtistManager++;
             a = home.createNewAgent(name, ArtistManagerAgent.class.getName(), args);
 	        a.start();
 	        agents.add(name);
@@ -117,7 +123,7 @@ public class ControllerAgent extends GuiAgent {
           try {
               Object[] args = new Object[2];
               args[0] = getAID();
-              String name = "CuratorAgent"+agentCntCurator++;
+              String name = CURATOR_AGENT_NAME+agentCntCurator++;
               a = home.createNewAgent(name, CuratorAgent.class.getName(), args);
               a.start();
               agents.add(name);
@@ -149,7 +155,20 @@ public class ControllerAgent extends GuiAgent {
          MobileAgentDescription mad = new MobileAgentDescription();
          mad.setName(aid);
          mad.setDestination(dest);
-         String newName = "Clone-"+agentName;
+         String newName = "";
+
+         if(agentName.contains(CURATOR_AGENT_NAME))
+         {
+             newName = "Clone-" + agentName + "-" + agentCloneCntCurator++;
+         }
+         else if(agentName.contains(ARTISTMANAGER_AGENT_NAME))
+         {
+             newName = "Clone-" + agentName + "-" + agentCloneCntArtistManager++;
+         }
+         else
+         {
+             newName = "Clone-"+agentName;
+         }
          CloneAction ca = new CloneAction();
          ca.setNewName(newName);
          ca.setMobileAgentDescription(mad);
