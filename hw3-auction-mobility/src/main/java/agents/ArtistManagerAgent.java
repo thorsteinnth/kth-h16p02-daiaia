@@ -551,19 +551,22 @@ public class ArtistManagerAgent extends MobileAgent
         {
             MessageTemplate mt = MessageTemplate.and(
                     MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-                    MessageTemplate.MatchConversationId("auction-" + paintingToAuction.getName() + "-auctionresult")
+                    MessageTemplate.and(
+                            MessageTemplate.MatchConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-success"),
+                            MessageTemplate.MatchConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-failure")
+                    )
             );
             ACLMessage msg = this.myAgent.receive(mt);
 
             if (msg != null)
             {
-                try
+                if (msg.getConversationId().equals("auction-" + paintingToAuction.getName() + "-auctionresult-success"))
                 {
-                    if (msg.getContentObject() != null && msg.getContentObject() instanceof ACLMessage)
-                    {
-                        // This is a winning PROPOSE message
+                    // This is a winning PROPOSE message
 
-                        ACLMessage winningBid = (ACLMessage)msg.getContentObject();
+                    try
+                    {
+                        ACLMessage winningBid = (ACLMessage) msg.getContentObject();
 
                         System.out.println(myAgent.getName()
                                 + " - Received winning bid message from clone " + msg.getSender().getName()
@@ -573,34 +576,35 @@ public class ArtistManagerAgent extends MobileAgent
                         // Save the winning bid
                         this.winningBids.add(winningBid);
                     }
-                    else if (msg.getContent().equals("auction-failed"))
+                    catch (UnreadableException ex)
                     {
-                        // This is an auction failed message
-
-                        System.out.println(myAgent.getName()
-                                + " - Received auction failed message from clone " + msg.getSender().getName()
-                                + " - " + msg.getContent()
-                        );
-                    }
-                    else
-                    {
+                        System.err.println(ex);
                         System.out.println(myAgent.getName() + " - Unknown auction result - " + msg);
                     }
-
-                    // Remove the sender from our list of clones that have yet to send us their auction result
-                    this.clonesYetToSendTheirAuctionResult.remove(msg.getSender());
-
-                    if (this.clonesYetToSendTheirAuctionResult.isEmpty())
-                    {
-                        selectBestWinningBidAndProcessIt();
-
-                        // We have received all messages that we are expecting, remove this cyclic behaviour from agent
-                        myAgent.removeBehaviour(this);
-                    }
                 }
-                catch (UnreadableException ex)
+                else if (msg.getConversationId().equals("auction-" + paintingToAuction.getName() + "-auctionresult-failure"))
                 {
-                    System.err.println(ex);
+                    // This is an auction failed message
+
+                    System.out.println(myAgent.getName()
+                            + " - Received auction failed message from clone " + msg.getSender().getName()
+                            + " - " + msg.getContent()
+                    );
+                }
+                else
+                {
+                    System.out.println(myAgent.getName() + " - Unknown auction result - " + msg);
+                }
+
+                // Remove the sender from our list of clones that have yet to send us their auction result
+                this.clonesYetToSendTheirAuctionResult.remove(msg.getSender());
+
+                if (this.clonesYetToSendTheirAuctionResult.isEmpty())
+                {
+                    selectBestWinningBidAndProcessIt();
+
+                    // We have received all messages that we are expecting, remove this cyclic behaviour from agent
+                    myAgent.removeBehaviour(this);
                 }
             }
             else
