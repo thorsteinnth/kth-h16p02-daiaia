@@ -691,5 +691,10 @@ public class ArtistManagerAgent extends MobileAgent
         // Clear the clone list we got from our parent. We want to have our own clone list, with just our clones.
         clones.clear();
         System.out.println(getName() + " - AFTER clone - Original parent: " + originalParent + " - Painting: " + paintingToAuction);
+
+        // Disable the start auction button for clones
+        // (they will start the auction when they receive a message from the original parent telling them to do so)
+        if (isClone())
+            ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
     }
 }
