@@ -110,7 +110,7 @@ public class ArtistManagerAgent extends MobileAgent
             myGui.setInfo("Moving to original container and reporting auction result");
 
             System.out.println("Moving to parent location: " + this.originalParentLocation.toString());
-            doMove(this.originalParentLocation);
+            doMove(destination = this.originalParentLocation);
         }
 
         addBehaviour(new ReportAuctionResultOneShot());
