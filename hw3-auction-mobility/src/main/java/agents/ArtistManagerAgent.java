@@ -83,21 +83,8 @@ public class ArtistManagerAgent extends MobileAgent
     {
         if(this.auctionWinningBid != null)
         {
-            System.out.println("Reporting winning bid: " + this.auctionWinningBid.toString());
+            addBehaviour(new ReportWinningBidOneShot());
             ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
-
-            try
-            {
-                ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
-                reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-winningbid");
-                reportMsg.setContentObject(this.auctionWinningBid);
-                reportMsg.addReceiver(this.originalParent);
-                myAgent.send(reportMsg);
-            }
-            catch (Exception ex)
-            {
-                ex.printStackTrace();
-            }
         }
         else
         {
@@ -228,6 +215,32 @@ public class ArtistManagerAgent extends MobileAgent
                 inform.addReceiver(bidder);
 
             myAgent.send(inform);
+        }
+    }
+
+    private class ReportWinningBidOneShot extends OneShotBehaviour
+    {
+        public ReportWinningBidOneShot()
+        {
+            super();
+        }
+
+        @Override
+        public void action()
+        {
+            try
+            {
+                System.out.println("Reporting winning bid: " + auctionWinningBid.toString());
+
+                ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
+                reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-winningbid");
+                reportMsg.setContentObject(auctionWinningBid);
+                reportMsg.addReceiver(originalParent);
+            }
+            catch (Exception ex)
+            {
+                ex.printStackTrace();
+            }
         }
     }
 
