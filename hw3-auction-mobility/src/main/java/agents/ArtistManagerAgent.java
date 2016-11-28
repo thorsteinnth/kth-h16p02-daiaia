@@ -90,7 +90,6 @@ public class ArtistManagerAgent extends MobileAgent
         if(this.auctionWinningBid != null)
         {
             addBehaviour(new ReportWinningBidOneShot());
-            ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
         }
         else
         {
@@ -341,7 +340,6 @@ public class ArtistManagerAgent extends MobileAgent
                         );
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
-                        ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
                         return;
                     }
 
@@ -368,7 +366,6 @@ public class ArtistManagerAgent extends MobileAgent
                     else
                     {
                         // auction failure
-                        ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(true);
                         System.out.println(myAgent.getName() + " - No bidders left. Aborting auction.");
                         System.out.println(myAgent.getName() + " - Auction over. Number of rounds: " + roundCount);
                         myGui.setInfo("Auction failure. Number of rounds: " + roundCount);
@@ -582,6 +579,34 @@ public class ArtistManagerAgent extends MobileAgent
         }
     }
 
+    private class WaitForStartAuctionRequest extends CyclicBehaviour
+    {
+        public WaitForStartAuctionRequest()
+        {
+            super();
+        }
+
+        @Override
+        public void action()
+        {
+            MessageTemplate mt = MessageTemplate.and(MessageTemplate.and(
+                    MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+                    MessageTemplate.MatchConversationId("start-auction-" + paintingToAuction.getName())),
+                    MessageTemplate.MatchSender(originalParent)
+            );
+            ACLMessage msg = this.myAgent.receive(mt);
+
+            if (msg != null)
+            {
+                startAuction();
+            }
+            else
+            {
+                block();
+            }
+        }
+    }
+
     //endregion
 
     private int getInitialAskingPrice(Painting painting)
@@ -693,8 +718,11 @@ public class ArtistManagerAgent extends MobileAgent
         System.out.println(getName() + " - AFTER clone - Original parent: " + originalParent + " - Painting: " + paintingToAuction);
 
         // Disable the start auction button for clones
-        // (they will start the auction when they receive a message from the original parent telling them to do so)
+        // they will start the auction when they receive a message from the original parent telling them to do so
         if (isClone())
+        {
             ((ArtistManagerAgentGui)myGui).setStartAuctionButtonEnabled(false);
+            addBehaviour(new WaitForStartAuctionRequest());
+        }
     }
 }
