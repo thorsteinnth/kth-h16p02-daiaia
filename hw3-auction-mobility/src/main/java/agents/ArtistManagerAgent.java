@@ -35,6 +35,8 @@ public class ArtistManagerAgent extends MobileAgent
     private DFAgentDescription bidderServiceTemplate;
     private ArrayList<AID> biddersInSameContainer;
 
+    private ACLMessage auctionWinningBid;
+
     protected void setup()
     {
         super.setup();
@@ -242,9 +244,13 @@ public class ArtistManagerAgent extends MobileAgent
 
             if (winningBid != null)
             {
+                auctionWinningBid = winningBid;
+
+                /*
                 ACLMessage reply = winningBid.createReply();
                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                 acceptances.add(reply);
+                */
             }
 
             // Send reject proposal messages to all other bidders
