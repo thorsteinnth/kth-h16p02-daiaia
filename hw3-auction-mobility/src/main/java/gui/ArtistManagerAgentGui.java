@@ -36,14 +36,6 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
         startAuctionInClones.setToolTipText("Start auction in clones");
         startAuctionInClones.addActionListener(this);
         base.add(startAuctionInClonesPane);
-
-        JPanel reportWinningBidPane = new JPanel();
-        reportWinningBidPane.setLayout(new BorderLayout(10,0));
-        reportWinningBidPane.add(reportWinningBid = new JButton("Report winning bid"));
-        reportWinningBid.setToolTipText("Report winning bid");
-        reportWinningBid.addActionListener(this);
-        setReportWinningButtonEnabled(false);
-        base.add(reportWinningBidPane);
     }
 
     @Override
@@ -53,19 +45,10 @@ public class ArtistManagerAgentGui extends MobileAgentGui implements ActionListe
         {
             this.agent.startAuction();
         }
-        else if (e.getSource() == reportWinningBid)
-        {
-            this.agent.reportWinningBid();
-        }
         else if (e.getSource() == startAuctionInClones)
         {
             this.agent.startAuctionInClones();
         }
-    }
-
-    public void setReportWinningButtonEnabled(boolean enabled)
-    {
-        this.reportWinningBid.setEnabled(enabled);
     }
 
     public void setStartAuctionButtonEnabled(boolean enabled)
