@@ -35,15 +35,23 @@ public class ArtistManagerAgent extends MobileAgent
 {
     private DFAgentDescription bidderServiceTemplate;
     private ArrayList<AID> biddersInSameContainer;
+    private ArrayList<AID> clones;
+    private Painting paintingToAuction;
+    private AID originalParent;
 
-    private Painting painting;
     private ACLMessage auctionWinningBid;
 
     protected void setup()
     {
+        // NOTE: This gets run only in the original agent, not the clones
+
         super.setup();
 
         this.biddersInSameContainer = new ArrayList<>();
+        this.clones = new ArrayList<>();
+        this.paintingToAuction = getRandomPainting();
+        // Set ourselves as the parent, our clones will have access to this field
+        this.originalParent = getAID();
 
         // Bidder service template
         this.bidderServiceTemplate = new DFAgentDescription();
@@ -81,7 +89,7 @@ public class ArtistManagerAgent extends MobileAgent
             try
             {
                 ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
-                reportMsg.setConversationId("auction-" + painting.getName() + "-winningbid");
+                reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-winningbid");
                 reportMsg.setContentObject(this.auctionWinningBid);
                 reportMsg.addReceiver(this.originalParent);
                 myAgent.send(reportMsg);
@@ -101,7 +109,7 @@ public class ArtistManagerAgent extends MobileAgent
     {
         ArrayList<AID> allBidders = getBidders();
         ArrayList<AID> biddersInSameContainer = new ArrayList<>();
-        
+
         for (AID bidder : allBidders)
         {
             ArrayList<Location> bidderLocations = getAgentLocations(bidder);
@@ -175,20 +183,18 @@ public class ArtistManagerAgent extends MobileAgent
                 return;
             }
 
-            // Get painting to auction off
-            painting = getRandomPainting();
-            System.out.println(myAgent.getName() + " - Auctioning off painting: " + painting);
+            System.out.println(myAgent.getName() + " - Auctioning off painting: " + paintingToAuction);
 
             // Inform bidders that there is an auction starting
-            this.addSubBehaviour(new InformBiddersOfStartOfAuctionBehaviour(myAgent, painting));
+            this.addSubBehaviour(new InformBiddersOfStartOfAuctionBehaviour(myAgent, paintingToAuction));
 
             // Start the auction
             try
             {
                 ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                 cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_DUTCH_AUCTION);
-                cfp.setConversationId("auction-" + painting.getName());
-                BidRequestDTO dto = new BidRequestDTO(painting, getInitialAskingPrice(painting));
+                cfp.setConversationId("auction-" + paintingToAuction.getName());
+                BidRequestDTO dto = new BidRequestDTO(paintingToAuction, getInitialAskingPrice(paintingToAuction));
                 cfp.setContentObject(dto);
                 for (AID bidder : biddersInSameContainer)
                     cfp.addReceiver(bidder);
@@ -534,5 +540,36 @@ public class ArtistManagerAgent extends MobileAgent
         }
 
         return locations;
+    }
+
+    @Override
+    public void doClone(Location destination, String newName)
+    {
+        super.doClone(destination, newName);
+
+        // Save the clone
+        AID cloneAID = new AID(newName, AID.ISLOCALNAME);
+        clones.add(cloneAID);
+        System.out.println(getName() + " - Clones: " + clones);
+    }
+
+    @Override
+    protected void beforeClone()
+    {
+        // This gets run on the agent that is being cloned
+
+        super.beforeClone();
+        //System.out.println(getName() + " - BEFORE clone - Original parent: " + originalParent + " - Painting: " + paintingToAuction);
+    }
+
+    @Override
+    protected void afterClone()
+    {
+        // This gets run on the clones
+
+        super.afterClone();
+        // Clear the clone list we got from our parent. We want to have our own clone list, with just our clones.
+        clones.clear();
+        System.out.println(getName() + " - AFTER clone - Original parent: " + originalParent + " - Painting: " + paintingToAuction);
     }
 }
