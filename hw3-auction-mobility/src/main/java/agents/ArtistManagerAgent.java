@@ -267,7 +267,7 @@ public class ArtistManagerAgent extends MobileAgent
                 else
                 {
                     System.out.println("Got no acceptable bids");
-                    reportMsg.setContentObject("auction-failed");
+                    reportMsg.setContent("auction-failed");
                 }
 
                 reportMsg.setContentObject(auctionWinningBid);
