@@ -77,6 +77,8 @@ public class CuratorAgent extends MobileAgent
         registerCuratorServices();
         addBehaviour(new WaitForAuction(this));
         getPaintingInterests();
+        ((CuratorAgentGui)myGui).setInterests(
+                this.subjectMatterInterests.toString() + " " + this.paintingMediumInterests.toString());
         System.out.println("CuratorAgent " + getAID().getName() + " is ready. Strategy: " + this.biddingStrategy);
     }
 
@@ -107,6 +109,11 @@ public class CuratorAgent extends MobileAgent
 
         super.afterMove();
 
+        // Update interests in GUI
+        // Have to do this here since the GUI is reset after move
+        ((CuratorAgentGui)myGui).setInterests(
+                this.subjectMatterInterests.toString() + " " + this.paintingMediumInterests.toString());
+        ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
     }
 
     protected void beforeClone() {
@@ -124,6 +131,9 @@ public class CuratorAgent extends MobileAgent
         this.resetPaintingInterests();
         this.getPaintingInterests();
 
+        // Update interests in GUI
+        ((CuratorAgentGui)myGui).setInterests(
+                this.subjectMatterInterests.toString() + " " + this.paintingMediumInterests.toString());
         ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
     }
 
@@ -236,9 +246,6 @@ public class CuratorAgent extends MobileAgent
         randomArtist = artists.get(random.nextInt(artists.size()));
         if (!this.artistInterests.contains(randomArtist))
             this.artistInterests.add(randomArtist);
-
-        ((CuratorAgentGui)myGui).setInterests(
-                this.subjectMatterInterests.toString() + " " + this.paintingMediumInterests.toString());
     }
 
     //region Behaviours
