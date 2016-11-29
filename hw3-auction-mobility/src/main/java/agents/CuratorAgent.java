@@ -97,17 +97,14 @@ public class CuratorAgent extends MobileAgent
         doDelete();
     }
 
-    protected void beforeMove() {
-// -----------------------------
-
+    protected void beforeMove()
+    {
         super.beforeMove();
     }
 
-    protected void afterMove() {
-// ----------------------------
-
+    protected void afterMove()
+    {
         super.afterMove();
-
 
         // Update interests in GUI
         // Have to do this here since the GUI is reset after move
@@ -115,22 +112,23 @@ public class CuratorAgent extends MobileAgent
         ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
     }
 
-    protected void beforeClone() {
-// -----------------------------
-
+    protected void beforeClone()
+    {
         super.beforeClone();
     }
 
-    protected void afterClone() {
-// ----------------------------
-
+    protected void afterClone()
+    {
         super.afterClone();
 
-        // randomly generate new interests for the clone
+        // Randomly generate new interests for the clone
         this.resetPaintingInterests();
         this.getPaintingInterests();
         displayInterestsInGui();
         ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
+
+        // Register our services in the DF
+        registerCuratorServices();
     }
 
     private void registerCuratorServices()
@@ -140,7 +138,7 @@ public class CuratorAgent extends MobileAgent
         String serviceName = ServiceList.SRVC_CURATOR_BIDDER_NAME; // + "-" + destination.getName()
         String serviceType = ServiceList.SRVC_CURATOR_BIDDER_TYPE;
 
-        System.out.println("Registering curator service at: " + serviceName);
+        System.out.println(getName() + " - Registering curator service: " + serviceName);
 
         bidderService.setName(serviceName);
         bidderService.setType(serviceType);
