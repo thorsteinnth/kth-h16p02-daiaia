@@ -864,8 +864,8 @@ public class ArtistManagerAgent extends MobileAgent
         // Clone myself twice, to container 2 and 3
         String selfClone0Name = getCloneName(ARTISTMANAGER_AGENT_NAME, 0, 0);
         String selfClone1Name = getCloneName(ARTISTMANAGER_AGENT_NAME, 0, 1);
-        cloneSelf(selfClone0Name, container2);
-        cloneSelf(selfClone1Name, container3);
+        cloneAgent(getAID().getLocalName(), selfClone0Name, container2);
+        cloneAgent(getAID().getLocalName(), selfClone1Name, container3);
 
         // Add two curator agents
         String newCurator0Name = CURATOR_AGENT_NAME+0;
@@ -887,15 +887,17 @@ public class ArtistManagerAgent extends MobileAgent
         sendAgentAddedInformMessageToControllerAgent(controllerAgentAID, newAgentNames);
     }
 
-    private void cloneSelf(String newName, Location destination)
+    private void cloneAgent(String oldName, String newName, Location destination)
     {
+        AID aid = new AID(oldName, AID.ISLOCALNAME);
+
         MobileAgentDescription mad = new MobileAgentDescription();
-        mad.setName(getAID());
+        mad.setName(aid);
         mad.setDestination(destination);
         CloneAction ca = new CloneAction();
         ca.setNewName(newName);
         ca.setMobileAgentDescription(mad);
-        sendMobilityRequest(new Action(getAID(), ca));
+        sendMobilityRequest(new Action(aid, ca));
     }
 
     private void createCuratorAgent(AID controllerAgentAID, String newCuratorName)
