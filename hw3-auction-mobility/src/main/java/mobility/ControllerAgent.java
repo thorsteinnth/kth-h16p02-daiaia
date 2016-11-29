@@ -4,7 +4,13 @@ import java.util.*;
 
 import agents.ArtistManagerAgent;
 import agents.CuratorAgent;
+import agents.ServiceList;
 import gui.ControllerAgentGui;
+import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.*;
 import jade.content.*;
 import jade.content.onto.basic.*;
@@ -81,6 +87,10 @@ public class ControllerAgent extends GuiAgent {
 	  // Create and show the gui
       myGui = new ControllerAgentGui(this, locations.keySet());
       myGui.setVisible(true);
+
+       // Register service and add behaviour (added by Fannar and Thorsteinn)
+       registerControllerServices();
+       addBehaviour(new AddAgentToGuiServer(this));
    }
 
 
@@ -200,5 +210,81 @@ public class ControllerAgent extends GuiAgent {
 	  }
 	  catch (Exception ex) { ex.printStackTrace(); }
    }
+
+    //region Behaviours and services (added by Fannar and Thorsteinn)
+
+    /**
+     * Register the controller agent services with DF
+     * */
+    private void registerControllerServices()
+    {
+        ServiceDescription controllerService = new ServiceDescription();
+
+        String serviceName = ServiceList.SRVC_CONTROLLER_NAME; // + "-" + destination.getName()
+        String serviceType = ServiceList.SRVC_CONTROLLER_TYPE;
+
+        System.out.println("Registering controller service at: " + serviceName);
+
+        controllerService.setName(serviceName);
+        controllerService.setType(serviceType);
+
+        DFAgentDescription agentDescription = new DFAgentDescription();
+        agentDescription.setName(getAID());
+        agentDescription.addServices(controllerService);
+
+        try
+        {
+            DFService.register(this, agentDescription);
+        }
+        catch (FIPAException fe)
+        {
+            fe.printStackTrace();
+        }
+    }
+
+    /**
+     * Behaviour that allows other agents to add themselves to the controller GUI
+     * Used when agents are created by some other agent than the ControllerAgent
+     * */
+    private class AddAgentToGuiServer extends CyclicBehaviour
+    {
+        public AddAgentToGuiServer(ControllerAgent a)
+        {
+            super(a);
+        }
+
+        public void action()
+        {
+            MessageTemplate mt = MessageTemplate.and(
+                    MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+                    MessageTemplate.MatchConversationId("new-agents-notification")
+            );
+            ACLMessage msg = this.myAgent.receive(mt);
+
+            if (msg != null)
+            {
+                //System.out.println(myAgent.getName() + " - Received message from " + msg.getSender().getName() + " - " + msg);
+
+                try
+                {
+                    ArrayList<String> newAgentNames = (ArrayList<String>) msg.getContentObject();
+                    for (String newAgentName : newAgentNames)
+                        agents.add(newAgentName);
+
+                    myGui.updateList(agents);
+                }
+                catch (UnreadableException ex)
+                {
+                    System.err.println(ex);
+                }
+            }
+            else
+            {
+                block();
+            }
+        }
+    }
+
+    //endregion
 
 }//class Controller

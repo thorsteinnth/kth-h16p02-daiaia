@@ -18,16 +18,22 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
+import jade.domain.JADEAgentManagement.QueryPlatformLocationsAction;
 import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.domain.mobility.CloneAction;
+import jade.domain.mobility.MobileAgentDescription;
 import jade.domain.mobility.MobilityOntology;
+import jade.domain.mobility.MoveAction;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.proto.ContractNetInitiator;
+import jade.wrapper.StaleProxyException;
 import mobility.MobileAgent;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -807,6 +813,9 @@ public class ArtistManagerAgent extends MobileAgent
             // Disable the "start auction in clones" button for clones
             ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
 
+            // Disable the "set up other agents" button for clones
+            ((ArtistManagerAgentGui) myGui).setSetupOtherAgentsButtonEnabled(false);
+
             // wait for start auction
             addBehaviour(new WaitForStartAuctionRequest());
         }
@@ -826,6 +835,221 @@ public class ArtistManagerAgent extends MobileAgent
 
             // Disable the "start auction in clones" button for clones
             ((ArtistManagerAgentGui) myGui).setStartAuctionInClonesButtonEnabled(false);
+
+            // Disable the "set up other agents" button for clones
+            ((ArtistManagerAgentGui) myGui).setSetupOtherAgentsButtonEnabled(false);
         }
     }
+
+    //region Set up other agents - clone and move automation
+
+    public void setupOtherAgents()
+    {
+        System.out.println(getName() + " - Setting up other agents");
+
+        final String CURATOR_AGENT_NAME = "CuratorAgent";
+        final String ARTISTMANAGER_AGENT_NAME = "ArtistManagerAgent";
+
+        AID controllerAgentAID = getControllerAgentAID();
+        if (controllerAgentAID == null)
+        {
+            System.out.println(getName() + " - Could not find controller agent. Aborting setup of other agents.");
+            return;
+        }
+
+        HashMap<String, Location> locations = getAvailableLocationsFromAMS();
+        Location container2 = locations.get("Container-2");
+        Location container3 = locations.get("Container-3");
+
+        // Clone myself twice, to container 2 and 3
+        String selfClone0Name = getCloneName(ARTISTMANAGER_AGENT_NAME, 0, 0);
+        String selfClone1Name = getCloneName(ARTISTMANAGER_AGENT_NAME, 0, 1);
+        cloneAgent(getAID().getLocalName(), selfClone0Name, container2);
+        cloneAgent(getAID().getLocalName(), selfClone1Name, container3);
+
+        // Add two curator agents
+        String newCurator0Name = CURATOR_AGENT_NAME+0;
+        String newCurator1Name = CURATOR_AGENT_NAME+1;
+        createCuratorAgent(controllerAgentAID, newCurator0Name);
+        createCuratorAgent(controllerAgentAID, newCurator1Name);
+
+        // Move the new curator agents to their appropriate containers
+        // The first one to container 2, the second one to container 3
+        moveAgent(newCurator0Name, container2);
+        moveAgent(newCurator1Name, container3);
+
+        // Clone curator agents, two clones in each container
+        String curator0Clone0Name = getCloneName(CURATOR_AGENT_NAME, 0, 0);
+        String curator0Clone1Name = getCloneName(CURATOR_AGENT_NAME, 0, 1);
+        String curator1Clone0Name = getCloneName(CURATOR_AGENT_NAME, 1, 0);
+        String curator1Clone1Name = getCloneName(CURATOR_AGENT_NAME, 1, 1);
+        cloneAgent(newCurator0Name, curator0Clone0Name, container2);
+        cloneAgent(newCurator0Name, curator0Clone1Name, container2);
+        cloneAgent(newCurator1Name, curator1Clone0Name, container3);
+        cloneAgent(newCurator1Name, curator1Clone1Name, container3);
+
+        // Update controller agent GUI
+        ArrayList<String> newAgentNames = new ArrayList<>();
+        newAgentNames.add(selfClone0Name);
+        newAgentNames.add(selfClone1Name);
+        newAgentNames.add(newCurator0Name);
+        newAgentNames.add(newCurator1Name);
+        newAgentNames.add(curator0Clone0Name);
+        newAgentNames.add(curator0Clone1Name);
+        newAgentNames.add(curator1Clone0Name);
+        newAgentNames.add(curator1Clone1Name);
+        sendAgentAddedInformMessageToControllerAgent(controllerAgentAID, newAgentNames);
+    }
+
+    private void cloneAgent(String oldName, String newName, Location destination)
+    {
+        AID aid = new AID(oldName, AID.ISLOCALNAME);
+
+        MobileAgentDescription mad = new MobileAgentDescription();
+        mad.setName(aid);
+        mad.setDestination(destination);
+        CloneAction ca = new CloneAction();
+        ca.setNewName(newName);
+        ca.setMobileAgentDescription(mad);
+        sendMobilityRequest(new Action(aid, ca));
+    }
+
+    private void createCuratorAgent(AID controllerAgentAID, String newCuratorName)
+    {
+        try
+        {
+            Object[] args = new Object[2];
+            // HACK: Faking it as if it is the controller agent that is creating the agent.
+            // Necessary for the MobileAgent implementation.
+            args[0] = controllerAgentAID;
+            jade.wrapper.AgentController ac =
+                    getContainerController().createNewAgent(newCuratorName, CuratorAgent.class.getName(), args);
+            ac.start();
+        }
+        catch (StaleProxyException ex)
+        {
+            System.err.println(getName() + " - Could not create new agent - " + ex);
+        }
+    }
+
+    private void moveAgent(String agentName, Location destination)
+    {
+        AID aid = new AID(agentName, AID.ISLOCALNAME);
+        MobileAgentDescription mad = new MobileAgentDescription();
+        mad.setName(aid);
+        mad.setDestination(destination);
+        MoveAction ma = new MoveAction();
+        ma.setMobileAgentDescription(mad);
+        sendMobilityRequest(new Action(aid, ma));
+    }
+
+    private HashMap<String, Location> getAvailableLocationsFromAMS()
+    {
+        HashMap<String, Location> locationsMap = new HashMap<>();
+
+        // Send request to AMS
+        sendMobilityRequest(new Action(getAMS(), new QueryPlatformLocationsAction()));
+
+        // Receive response from AMS
+        MessageTemplate mt = MessageTemplate.and(
+                MessageTemplate.MatchSender(getAMS()),
+                MessageTemplate.MatchPerformative(ACLMessage.INFORM));
+        ACLMessage resp = blockingReceive(mt);
+
+        try
+        {
+            ContentElement ce = getContentManager().extractContent(resp);
+            Result result = (Result) ce;
+            jade.util.leap.Iterator it = result.getItems().iterator();
+            while (it.hasNext())
+            {
+                Location loc = (Location)it.next();
+                locationsMap.put(loc.getName(), loc);
+            }
+        }
+        catch (Codec.CodecException|OntologyException ex)
+        {
+            System.err.println(ex);
+        }
+
+        return locationsMap;
+    }
+
+    private void sendMobilityRequest(Action action)
+    {
+        ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
+        request.setLanguage(new SLCodec().getName());
+        request.setOntology(MobilityOntology.getInstance().getName());
+        request.setConversationId("artistmanageragent-setup-other-agents");
+        try
+        {
+            getContentManager().fillContent(request, action);
+            request.addReceiver(action.getActor());
+            send(request);
+        }
+        catch (Exception ex)
+        {
+            System.err.println(ex);
+        }
+    }
+
+    /**
+     * Send notification to controller agent to get him to update his GUI.
+     * NOTE: This is a function and not a behaviour since the behaviour would get added to the newly
+     * created clones as well.
+     */
+    private void sendAgentAddedInformMessageToControllerAgent(AID controllerAgentAID, ArrayList<String> addedAgentNames)
+    {
+        try
+        {
+            ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+            inform.setConversationId("new-agents-notification");
+            inform.setContentObject(addedAgentNames);
+            inform.addReceiver(controllerAgentAID);
+            this.send(inform);
+        }
+        catch (IOException ex)
+        {
+            System.err.println(ex);
+        }
+    }
+
+    private AID getControllerAgentAID()
+    {
+        try
+        {
+            // Find controller agent
+
+            DFAgentDescription controllerAgentDescription = new DFAgentDescription();
+            ServiceDescription sd = new ServiceDescription();
+            sd.setType(ServiceList.SRVC_CONTROLLER_TYPE);
+            sd.setName(ServiceList.SRVC_CONTROLLER_NAME);
+            controllerAgentDescription.addServices(sd);
+
+            DFAgentDescription[] result = DFService.search(this, controllerAgentDescription);
+            if (result.length != 1)
+            {
+                System.out.println(this.getName()
+                        + " - ERROR: Found " + result.length
+                        + " controller agents. Expecting 1.");
+            }
+            else
+            {
+                return result[0].getName();
+            }
+        }
+        catch (FIPAException fe)
+        {
+            System.err.println(fe);
+        }
+
+        return null;
+    }
+
+    private String getCloneName(String agentTypeName, int agentNumber, int cloneNumber)
+    {
+        return "Clone-" + agentTypeName + agentNumber + "-" + cloneNumber;
+    }
+
+    //endregion
 }

@@ -106,8 +106,12 @@ public class CuratorAgent extends MobileAgent
 // ----------------------------
 
         super.afterMove();
-        displayInterestsInGui();
 
+
+        // Update interests in GUI
+        // Have to do this here since the GUI is reset after move
+        displayInterestsInGui();
+        ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
     }
 
     protected void beforeClone() {
@@ -124,7 +128,7 @@ public class CuratorAgent extends MobileAgent
         // randomly generate new interests for the clone
         this.resetPaintingInterests();
         this.getPaintingInterests();
-
+        displayInterestsInGui();
         ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
     }
 
