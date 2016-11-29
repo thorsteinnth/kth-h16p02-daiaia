@@ -42,6 +42,6 @@ public class CuratorAgentGui extends MobileAgentGui
 
     public void setInterests(String interests){
 
-        this.interests.setText("Interests: " + interests);
+        this.interests.setText(interests);
     }
 }

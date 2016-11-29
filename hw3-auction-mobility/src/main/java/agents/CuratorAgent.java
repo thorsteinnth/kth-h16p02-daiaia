@@ -106,6 +106,7 @@ public class CuratorAgent extends MobileAgent
 // ----------------------------
 
         super.afterMove();
+        displayInterestsInGui();
 
     }
 
@@ -237,8 +238,19 @@ public class CuratorAgent extends MobileAgent
         if (!this.artistInterests.contains(randomArtist))
             this.artistInterests.add(randomArtist);
 
+        displayInterestsInGui();
+    }
+
+    private void displayInterestsInGui()
+    {
         ((CuratorAgentGui)myGui).setInterests(
-                this.subjectMatterInterests.toString() + " " + this.paintingMediumInterests.toString());
+                "<html>"
+                        + "Interests: "
+                        + this.subjectMatterInterests.toString()
+                        + this.paintingMediumInterests.toString()
+                        + "<br>"
+                        + this.artistInterests.toString()
+                        + "</html>");
     }
 
     //region Behaviours
