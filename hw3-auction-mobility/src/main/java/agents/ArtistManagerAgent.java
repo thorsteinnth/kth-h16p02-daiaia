@@ -853,10 +853,16 @@ public class ArtistManagerAgent extends MobileAgent
         Location container3 = locations.get("Container-3");
 
         // Clone myself twice, to container 2 and 3
-        cloneSelf(getCloneName(ARTISTMANAGER_AGENT_NAME, 0), container2);
-        cloneSelf(getCloneName(ARTISTMANAGER_AGENT_NAME, 1), container3);
+        String selfClone0Name = getCloneName(ARTISTMANAGER_AGENT_NAME, 0, 0);
+        String selfClone1Name = getCloneName(ARTISTMANAGER_AGENT_NAME, 0, 1);
+        cloneSelf(selfClone0Name, container2);
+        cloneSelf(selfClone1Name, container3);
 
-        // TODO Update controller agent GUI
+        // Update controller agent GUI
+        ArrayList<String> newAgentNames = new ArrayList<>();
+        newAgentNames.add(selfClone0Name);
+        newAgentNames.add(selfClone1Name);
+        sendAgentAddedInformMessageToControllerAgent(newAgentNames);
     }
 
     private void cloneSelf(String newName, Location destination)
@@ -920,9 +926,56 @@ public class ArtistManagerAgent extends MobileAgent
         }
     }
 
-    private String getCloneName(String agentTypeName, int cloneNumber)
+    /**
+     * Send notification to controller agent to get him to update his GUI.
+     * NOTE: This is a function and not a behaviour since the behaviour would get added to the newly
+     * created clones as well.
+     */
+    private void sendAgentAddedInformMessageToControllerAgent(ArrayList<String> addedAgentNames)
     {
-        return "Clone-" + agentTypeName + "-" + cloneNumber;
+        try
+        {
+            // Find controller agent
+
+            DFAgentDescription controllerAgentDescription = new DFAgentDescription();
+            ServiceDescription sd = new ServiceDescription();
+            sd.setType(ServiceList.SRVC_CONTROLLER_TYPE);
+            sd.setName(ServiceList.SRVC_CONTROLLER_NAME);
+            controllerAgentDescription.addServices(sd);
+
+            DFAgentDescription[] result = DFService.search(this, controllerAgentDescription);
+            if (result.length != 1)
+            {
+                System.out.println(this.getName()
+                        + " - Found " + result.length
+                        + " controller agents. Aborting agent-added-notification");
+            }
+            else
+            {
+                // Controller agent found. Send him an INFORM message about the new agents.
+                try
+                {
+                    ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+                    inform.setConversationId("new-agents-notification");
+                    inform.setContentObject(addedAgentNames);
+                    inform.addReceiver(result[0].getName());
+                    this.send(inform);
+                }
+                catch (IOException ex)
+                {
+                    System.err.println(ex);
+                }
+            }
+        }
+        catch (FIPAException fe)
+        {
+            System.err.println(fe);
+        }
+    }
+
+    private String getCloneName(String agentTypeName, int agentNumber, int cloneNumber)
+    {
+        return "Clone-" + agentTypeName + agentNumber + "-" + cloneNumber;
     }
 
     //endregion
