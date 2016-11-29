@@ -115,7 +115,7 @@ public class ArtistManagerAgent extends MobileAgent
             // lets move it there before it can report its auction result
             myGui.setInfo("Moving to original container and reporting auction result");
 
-            System.out.println("Moving to parent location: " + this.originalParentLocation.toString());
+            System.out.println(getName() + " - Moving to parent location: " + this.originalParentLocation.toString());
             doMove(destination = this.originalParentLocation);
         }
 
@@ -261,19 +261,19 @@ public class ArtistManagerAgent extends MobileAgent
         {
             try
             {
-                System.out.println(myAgent.getLocalName() + " - Reporting auction result");
+                System.out.println(myAgent.getName() + " - Reporting auction result");
 
                 ACLMessage reportMsg = new ACLMessage(ACLMessage.INFORM);
 
                 if (auctionWinningBid != null)
                 {
-                    System.out.println("Winning bid is: " + auctionWinningBid.getContent().toString());
+                    System.out.println(getName() + " - Winning bid is: " + auctionWinningBid.getContent().toString());
                     reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-success");
                     reportMsg.setContentObject(auctionWinningBid);
                 }
                 else
                 {
-                    System.out.println("Got no acceptable bids");
+                    System.out.println(getName() +  " - Got no acceptable bids");
                     reportMsg.setConversationId("auction-" + paintingToAuction.getName() + "-auctionresult-failure");
                     reportMsg.setContent("auction-failed");
                 }
@@ -423,7 +423,7 @@ public class ArtistManagerAgent extends MobileAgent
                 myGui.setInfo("Auction success. Number of rounds: " + roundCount);
 
                 int bidAmount = Integer.parseInt(auctionWinningBid.getContent());
-                System.out.println(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
+                System.out.println(myAgent.getName() + " - Got a winning bid: " + bidAmount);
                 myGui.setInfo(myAgent.getLocalName() + " got a winning bid: " + bidAmount);
                 moveCloneToOriginalContainerAndReportAuctionResult();
             }
