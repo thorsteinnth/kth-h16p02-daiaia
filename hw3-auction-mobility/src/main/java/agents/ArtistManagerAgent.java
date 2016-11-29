@@ -878,12 +878,26 @@ public class ArtistManagerAgent extends MobileAgent
         moveAgent(newCurator0Name, container2);
         moveAgent(newCurator1Name, container3);
 
+        // Clone curator agents, two clones in each container
+        String curator0Clone0Name = getCloneName(CURATOR_AGENT_NAME, 0, 0);
+        String curator0Clone1Name = getCloneName(CURATOR_AGENT_NAME, 0, 1);
+        String curator1Clone0Name = getCloneName(CURATOR_AGENT_NAME, 1, 0);
+        String curator1Clone1Name = getCloneName(CURATOR_AGENT_NAME, 1, 1);
+        cloneAgent(newCurator0Name, curator0Clone0Name, container2);
+        cloneAgent(newCurator0Name, curator0Clone1Name, container2);
+        cloneAgent(newCurator1Name, curator1Clone0Name, container3);
+        cloneAgent(newCurator1Name, curator1Clone1Name, container3);
+
         // Update controller agent GUI
         ArrayList<String> newAgentNames = new ArrayList<>();
         newAgentNames.add(selfClone0Name);
         newAgentNames.add(selfClone1Name);
         newAgentNames.add(newCurator0Name);
         newAgentNames.add(newCurator1Name);
+        newAgentNames.add(curator0Clone0Name);
+        newAgentNames.add(curator0Clone1Name);
+        newAgentNames.add(curator1Clone0Name);
+        newAgentNames.add(curator1Clone1Name);
         sendAgentAddedInformMessageToControllerAgent(controllerAgentAID, newAgentNames);
     }
 
