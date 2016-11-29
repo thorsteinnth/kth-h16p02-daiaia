@@ -68,8 +68,7 @@ public class CuratorAgent extends MobileAgent
         }
         else
         {
-            // default to all passive
-            this.biddingStrategy = BiddingStrategy.PASSIVE;
+            getRandomStrategy();
         }
 
         ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
@@ -124,6 +123,7 @@ public class CuratorAgent extends MobileAgent
         // Randomly generate new interests for the clone
         this.resetPaintingInterests();
         this.getPaintingInterests();
+        this.getRandomStrategy();
         displayInterestsInGui();
         ((CuratorAgentGui)myGui).setStrategy(this.biddingStrategy.toString());
 
@@ -240,6 +240,23 @@ public class CuratorAgent extends MobileAgent
         randomArtist = artists.get(random.nextInt(artists.size()));
         if (!this.artistInterests.contains(randomArtist))
             this.artistInterests.add(randomArtist);
+    }
+
+    private void getRandomStrategy()
+    {
+        Random random = new Random();
+        switch (random.nextInt(3))
+        {
+            case 0:
+                this.biddingStrategy = BiddingStrategy.PASSIVE;
+                break;
+            case 1:
+                this.biddingStrategy = BiddingStrategy.MEDIUM;
+                break;
+            case 2:
+                this.biddingStrategy = BiddingStrategy.AGGRESSIVE;
+                break;
+        }
     }
 
     private void displayInterestsInGui()
