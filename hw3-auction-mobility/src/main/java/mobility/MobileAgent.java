@@ -138,6 +138,18 @@ public class MobileAgent extends GuiAgent {
 
 				  MoveAction ma = (MoveAction)concept;
 				  Location l = ma.getMobileAgentDescription().getDestination();
+
+				   // Begin added by Thorsteinn and Fannar
+				   // Don't allow moves to our current container
+				   // (moves to the same container we are already in)
+				   // The GUI just disappears if we do that, this is a workaround for that
+				   if (l != null && l.equals(here()))
+				   {
+					   System.out.println(getName() + " - Trying to move to current container. Aborting move.");
+					   return;
+				   }
+				   // End added by Thorsteinn and Fannar
+
 				  if (l != null) doMove(destination = l);
 			   }
 			   else if (concept instanceof KillAgent){
