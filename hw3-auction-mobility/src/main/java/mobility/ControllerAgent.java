@@ -60,7 +60,8 @@ public class ControllerAgent extends GuiAgent {
          // Create the container objects
          home = runtime.createAgentContainer(new ProfileImpl());
          container = new jade.wrapper.AgentContainer[3];
-         for (int i = 0; i < 5; i++){
+
+         for (int i = 0; i < 2; i++){
             container[0] = runtime.createAgentContainer(new ProfileImpl());
 	     }
 	     doWait(2000);
