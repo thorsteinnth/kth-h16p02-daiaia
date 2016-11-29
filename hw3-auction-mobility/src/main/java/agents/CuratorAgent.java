@@ -77,6 +77,7 @@ public class CuratorAgent extends MobileAgent
         registerCuratorServices();
         addBehaviour(new WaitForAuction(this));
         getPaintingInterests();
+        displayInterestsInGui();
         System.out.println("CuratorAgent " + getAID().getName() + " is ready. Strategy: " + this.biddingStrategy);
     }
 
@@ -241,8 +242,6 @@ public class CuratorAgent extends MobileAgent
         randomArtist = artists.get(random.nextInt(artists.size()));
         if (!this.artistInterests.contains(randomArtist))
             this.artistInterests.add(randomArtist);
-
-        displayInterestsInGui();
     }
 
     private void displayInterestsInGui()
